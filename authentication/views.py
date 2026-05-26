@@ -6,6 +6,26 @@ from django.contrib.auth import login
 from django.contrib.auth import logout
 
 
+ROLE_REDIRECTS = {
+    'admin': '/analytics/',
+    'owner': '/analytics/',
+    'manager': '/analytics/',
+    'pos_admin': '/pos/',
+    'cashier': '/cashier/',
+    'waiter': '/waiter/',
+    'server': '/waiter/',
+    'offitsiant': '/waiter/',
+    'kitchen': '/kitchen/',
+    'chef': '/kitchen/',
+    'cook': '/kitchen/',
+    'oshpaz': '/kitchen/',
+    'inventory manager': '/inventory-dashboard/',
+    'stock manager': '/inventory-dashboard/',
+    'accountant': '/settings/accounting/',
+    'hr': '/staff/',
+}
+
+
 # =========================
 # LOGIN
 # =========================
@@ -86,48 +106,21 @@ def role_redirect(user):
 
     if not user.role:
 
-        return redirect('/login/')
+        return redirect('/logout/')
 
-    role_name = user.role.name.lower()
+    role_name = str(
+        user.role.name
+    ).strip().lower()
 
+    redirect_to = ROLE_REDIRECTS.get(
+        role_name
+    )
 
-    # WAITER
-    if role_name == 'waiter':
+    if redirect_to:
 
-        return redirect('/waiter/')
+        return redirect(redirect_to)
 
-
-    # KITCHEN
-    elif role_name == 'kitchen':
-
-        return redirect('/kitchen/')
-
-
-    # CASHIER
-    elif role_name == 'cashier':
-
-        return redirect('/cashier/')
-
-
-    # POS ADMIN
-    elif role_name == 'pos_admin':
-
-        return redirect('/pos/')
-
-
-    # MANAGER
-    elif role_name == 'manager':
-
-        return redirect('/analytics/')
-
-
-    # OWNER
-    elif role_name == 'owner':
-
-        return redirect('/analytics/')
-
-
-    return redirect('/')
+    return redirect('/analytics/')
 
 
 # =========================
