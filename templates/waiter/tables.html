@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}BitePlate - Tables{% endblock %}
+{% block content %}
+<section class="waiter-floor-page">
+<header class="waiter-floor-head">
+    <div>
+        <p>Floor service</p>
+        <h1>Tables</h1>
+        <span>Stolni tanlang va zakazni POS oynasida davom ettiring.</span>
+    </div>
+</header>
+<section class="waiter-table-grid">
+{% for table in tables %}
+    <article class="waiter-table-card {{ table.status }}">
+        <div class="waiter-table-top">
+            <div>
+                <h2>Table {{ table.table_number }}</h2>
+                <p>Seats: {{ table.seats }}</p>
+            </div>
+            <span>{{ table.status|title }}</span>
+        </div>
+        <div class="waiter-table-center">🍽️</div>
+        <a href="{% url 'create_order' table.id %}">
+            {% if table.status == 'occupied' %}Open order{% else %}Create order{% endif %}
+        </a>
+    </article>
+{% empty %}
+    <div class="empty"><strong>No tables found</strong>Add tables in admin to start service.</div>
+{% endfor %}
+</section>
+</section>
+{% endblock %}

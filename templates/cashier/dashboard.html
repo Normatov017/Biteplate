@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Cashier
+{% endblock %}
+
+{% block content %}
+
+<div class="cashier-page">
+
+    <div class="cashier-header">
+
+        <div>
+
+            <p class="section-label">
+                Cashier desk
+            </p>
+
+            <h1 class="page-title">
+                Open Payments
+            </h1>
+
+            <p class="page-subtitle">
+                Settle restaurant orders and print receipts.
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="cashier-orders">
+
+        {% for order in orders %}
+
+        <div class="cashier-card">
+
+            <div class="cashier-top">
+
+                <div>
+
+                    <h2>
+                        Order #{{ order.id }}
+                    </h2>
+
+                    <p>
+                        Table {{ order.table.table_number }} · {{ order.order_type }}
+                    </p>
+
+                </div>
+
+                <div class="status-badge">
+
+                    {{ order.status }}
+
+                </div>
+
+            </div>
+
+            <div class="cashier-items">
+
+                {% for item in order.items.all %}
+
+                <div class="cashier-item">
+
+                    <span>
+                        {{ item.menu_item.name }}
+                        ×{{ item.quantity }}
+                    </span>
+
+                    <strong>
+                        ${{ item.get_total }}
+                    </strong>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            <div class="cashier-total">
+
+                <span>Total</span>
+
+                <strong>
+                    ${{ order.get_total }}
+                </strong>
+
+            </div>
+
+            <a
+                href="{% url 'generate_bill' order.id %}"
+                class="checkout-btn"
+            >
+                Open Checkout
+            </a>
+
+        </div>
+
+        {% empty %}
+
+        <div class="empty-card">
+
+            <h2>
+                No open payments
+            </h2>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate Reservations
+{% endblock %}
+
+{% block content %}
+
+<section class="pos-list-page">
+    <div class="pos-topbar">
+        <div class="pos-tabs">
+            <a href="{% url 'pos_terminal' %}">Tables</a>
+            <a href="{% url 'pos_orders' %}">Orders</a>
+            <a href="{% url 'pos_terminal' %}">Register</a>
+            <a class="active" href="{% url 'pos_reservations' %}">Reservation</a>
+        </div>
+        <div class="pos-topbar-actions">
+            <a class="pos-qr-link" href="{% url 'send_reservation_reminders_now' %}">
+                Send reminders
+            </a>
+            <button class="pos-qr-link" type="button" data-open-reservation>New</button>
+        </div>
+    </div>
+
+    <form method="post" class="reservation-form" id="reservationForm" hidden>
+        {% csrf_token %}
+        <label>
+            Customer
+            <input name="customer_name" required placeholder="Guest name">
+        </label>
+        <label>
+            Phone
+            <input name="phone_number" placeholder="+998">
+        </label>
+        <label>
+            Table
+            <select name="table" required>
+                {% for table in tables %}
+                <option value="{{ table.id }}">Table {{ table.table_number }} · {{ table.seats }} seats</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            Date
+            <input name="reservation_date" type="date" required>
+        </label>
+        <label>
+            Start
+            <input name="reservation_time" type="time" required>
+        </label>
+        <label>
+            End
+            <input name="end_time" type="time">
+        </label>
+        <label>
+            Guests
+            <input name="guest_count" type="number" min="1" value="2">
+        </label>
+        <button type="submit">Create Reservation</button>
+    </form>
+
+    <div class="reservation-timeline">
+        <div class="reservation-hours">
+            {% for hour in calendar_hours %}
+            <span>{{ hour }}:00</span>
+            {% endfor %}
+        </div>
+        {% for row in reservation_rows %}
+        <div
+            class="reservation-bar {{ row.reservation.status }}"
+            style="left:{{ row.offset }}%; width:{{ row.width }}%;"
+        >
+            <strong>Table {{ row.reservation.table.table_number }}</strong>
+            <span>
+                {{ row.reservation.customer_name }} ·
+                {{ row.reservation.reservation_time|date:'H:i' }}
+                {% if row.reservation.end_time %}-{{ row.reservation.end_time|date:'H:i' }}{% endif %}
+            </span>
+            <em>{{ row.reservation.guest_count }} guests</em>
+        </div>
+        {% empty %}
+        <div class="pos-empty-state">
+            <strong>No reservation timeline yet.</strong>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="pos-order-list">
+        {% for reservation in reservations %}
+        <div class="pos-order-line">
+            <div>
+                <strong>{{ reservation.customer_name }}</strong>
+                <span>
+                    Table {{ reservation.table.table_number }} · {{ reservation.guest_count }} guests
+                </span>
+            </div>
+            <div>
+                <strong>{{ reservation.reservation_time|date:'M d, H:i' }}</strong>
+                <span>
+                    {% if reservation.end_time %}
+                        until {{ reservation.end_time|date:'H:i' }}
+                    {% else %}
+                        end time not set
+                    {% endif %}
+                </span>
+            </div>
+            <span class="status-pill {% if reservation.status == 'confirmed' %}ok{% else %}muted{% endif %}">
+                {{ reservation.get_status_display }}
+            </span>
+            <span class="status-pill {% if reservation.reminder_sent_at %}ok{% elif reservation.last_reminder_error %}danger{% else %}muted{% endif %}">
+                {% if reservation.reminder_sent_at %}
+                    Reminder sent {{ reservation.reminder_sent_at|date:'H:i' }}
+                {% elif reservation.last_reminder_error %}
+                    Reminder failed
+                {% else %}
+                    Reminder pending
+                {% endif %}
+            </span>
+            {% if reservation.status == 'confirmed' %}
+            <a class="pos-qr-link" href="{% url 'open_reservation_order' reservation.id %}">Open order</a>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="pos-empty-state">
+            <strong>No reservations yet.</strong>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<script>
+(() => {
+    const button = document.querySelector('[data-open-reservation]');
+    const form = document.getElementById('reservationForm');
+    button?.addEventListener('click', () => {
+        form.hidden = !form.hidden;
+    });
+    const dateInput = form?.querySelector('[name="reservation_date"]');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().slice(0, 10);
+    }
+})();
+</script>
+
+{% endblock %}

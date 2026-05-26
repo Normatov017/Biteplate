@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}BitePlate - Track Order #{{ order.id }}{% endblock %}
+{% block content %}
+<section class="card card-pad" style="max-width:760px;margin:0 auto">
+    <div class="card-head"><div><p class="eyebrow">Order tracking</p><h1 class="page-title">Order #{{ order.id }}</h1><p class="page-copy">Table {{ order.table.table_number }}</p></div><span class="badge status-{{ order.status }}">{{ order.status }}</span></div>
+    <div class="grid" style="gap:12px">
+        <div class="item-box status-line {% if order.status == 'pending' %}pending{% endif %}"><strong>Pending</strong><span class="badge {% if order.status == 'pending' %}badge-warning{% endif %}">Received</span></div>
+        <div class="item-box status-line {% if order.status == 'preparing' %}preparing{% endif %}"><strong>Preparing</strong><span class="badge {% if order.status == 'preparing' %}badge-warning{% endif %}">Kitchen</span></div>
+        <div class="item-box status-line {% if order.status == 'ready' %}ready{% endif %}"><strong>Ready</strong><span class="badge {% if order.status == 'ready' %}badge-success{% endif %}">Pickup</span></div>
+        <div class="item-box status-line {% if order.status == 'served' %}served{% endif %}"><strong>Served</strong><span class="badge {% if order.status == 'served' %}badge-success{% endif %}">Done</span></div>
+    </div>
+</section>
+{% endblock %}
+

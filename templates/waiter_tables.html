@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}BitePlate - Waiter Tables{% endblock %}
+{% block content %}
+<header class="page-head"><div><p class="eyebrow">Waiter station</p><h1 class="page-title">Tables</h1><p class="page-copy">Welcome, {{ waiter_name }}. Choose a table to manage the order.</p></div></header>
+<section class="grid grid-auto">
+{% for table in tables %}
+    <article class="card card-pad status-line {{ table.status }}">
+        <div class="card-head"><div><h2 class="card-title">Table {{ table.table_number }}</h2><p class="card-subtitle">{{ table.seats }} seats</p></div><span class="badge status-{{ table.status }}">{{ table.status }}</span></div>
+        <a class="btn btn-primary btn-block" href="{% url 'waiter_pos' table.id %}">Open table</a>
+    </article>
+{% empty %}
+    <div class="empty"><strong>No tables</strong>Tables will appear here after setup.</div>
+{% endfor %}
+</section>
+{% endblock %}
+

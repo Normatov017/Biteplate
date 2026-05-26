@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+{% load money %}
+
+{% block title %}
+BitePlate - Analytics
+{% endblock %}
+
+{% block main_class %}
+shell analytics-shell
+{% endblock %}
+
+{% block content %}
+
+<section class="analytics-hero analytics-hero-modern">
+    <div class="hero-content">
+        <div>
+            <p class="eyebrow">Restaurant Command Center</p>
+            <h1 class="page-title">Analytics Dashboard</h1>
+            <p class="page-copy">
+                Savdo, kassalar, waiter KPI, kitchen, stol statuslari va sklad holati bitta joyda.
+            </p>
+        </div>
+
+        <form class="analytics-filters" method="get">
+            <label>
+                From
+                <input type="date" name="from" value="{{ start_date|date:'Y-m-d' }}">
+            </label>
+            <label>
+                To
+                <input type="date" name="to" value="{{ end_date|date:'Y-m-d' }}">
+            </label>
+            <button class="btn btn-primary" type="submit">Filter</button>
+        </form>
+    </div>
+
+    <div class="command-strip">
+        <a href="/tables/" class="command-tile">
+            <span class="command-icon">🍽</span>
+            <span><strong>Tables</strong><small>Stollar va bronlar</small></span>
+        </a>
+        <a href="/pos/" class="command-tile">
+            <span class="command-icon">🖥</span>
+            <span><strong>POS</strong><small>Tezkor savdo oynasi</small></span>
+        </a>
+        <a href="/kitchen/" class="command-tile">
+            <span class="command-icon">🔥</span>
+            <span><strong>Kitchen</strong><small>Zakaz navbati</small></span>
+        </a>
+        <a href="/inventory-dashboard/" class="command-tile">
+            <span class="command-icon">📦</span>
+            <span><strong>Inventory</strong><small>Stock va purchase</small></span>
+        </a>
+    </div>
+</section>
+
+<section class="analytics-kpi-grid">
+    <article class="metric-card metric-accent-green">
+        <span>Net revenue</span>
+        <strong>{{ revenue|money:currency }}</strong>
+        <small>Paid - refund</small>
+    </article>
+    <article class="metric-card">
+        <span>Orders</span>
+        <strong>{{ order_count }}</strong>
+        <small>{{ active_order_count }} active order</small>
+    </article>
+    <article class="metric-card">
+        <span>Average check</span>
+        <strong>{{ average_check|money:currency }}</strong>
+        <small>Guest ticket average</small>
+    </article>
+    <article class="metric-card metric-accent-red">
+        <span>Expenses</span>
+        <strong>{{ purchase_expenses|money:currency }}</strong>
+        <small>Purchase cost</small>
+    </article>
+    <article class="metric-card metric-accent-purple">
+        <span>Net profit</span>
+        <strong>{{ net_profit|money:currency }}</strong>
+        <small>Revenue + cash in/out - expense</small>
+    </article>
+    <article class="metric-card">
+        <span>Expected cash delta</span>
+        <strong>{{ cash_balance_delta|money:currency }}</strong>
+        <small>Cash in {{ cash_in|money:currency }} · out {{ cash_out|money:currency }}</small>
+    </article>
+</section>
+
+<section class="analytics-board">
+    <article class="analytics-card chart-card wide">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">7 kunlik savdo</h2>
+                <p class="card-subtitle">Kunlik revenue trendi.</p>
+            </div>
+        </div>
+        <canvas id="salesChart" class="analytics-canvas" height="220"></canvas>
+    </article>
+
+    <article class="analytics-card chart-card">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Payment mix</h2>
+                <p class="card-subtitle">Naqd, card, click, payme ulushi.</p>
+            </div>
+        </div>
+        <canvas id="paymentChart" class="analytics-canvas" height="220"></canvas>
+    </article>
+</section>
+
+<section class="analytics-board">
+    <article class="analytics-card chart-card">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Bugungi soatlar</h2>
+                <p class="card-subtitle">Qaysi paytda savdo kuchli bo‘lgan.</p>
+            </div>
+        </div>
+        <canvas id="hourlyChart" class="analytics-canvas" height="220"></canvas>
+    </article>
+
+    <article class="analytics-card chart-card wide">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Waiter KPI</h2>
+                <p class="card-subtitle">
+                    {{ commission_percent }}% bonus va {{ fixed_pay|money:currency }} daily fixed hisobida.
+                </p>
+            </div>
+            <a class="btn btn-secondary" href="/pos/waiters/">KPI page</a>
+        </div>
+        <canvas id="waiterChart" class="analytics-canvas" height="220"></canvas>
+    </article>
+</section>
+
+<section class="analytics-board">
+    <article class="analytics-card wide">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Employee earnings</h2>
+                <p class="card-subtitle">Bugungi/order period bo‘yicha waiter ishlagan summa va bonus.</p>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Orders</th>
+                        <th>Sales</th>
+                        <th>Fixed</th>
+                        <th>Bonus</th>
+                        <th>Total KPI</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in waiter_rows %}
+                    <tr>
+                        <td>
+                            <strong>{{ row.name }}</strong>
+                            <small>{{ row.role }}</small>
+                        </td>
+                        <td>{{ row.orders }}</td>
+                        <td>{{ row.sales|money:currency }}</td>
+                        <td>{{ row.fixed_pay|money:currency }}</td>
+                        <td>{{ row.commission|money:currency }}</td>
+                        <td><b>{{ row.total_payout|money:currency }}</b></td>
+                        <td>
+                            {% if row.clock_in %}
+                                <span class="status-pill good">Clocked in</span>
+                            {% elif row.is_online %}
+                                <span class="status-pill info">Online</span>
+                            {% else %}
+                                <span class="status-pill muted">Offline</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7">Waiter data yo‘q.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="analytics-card">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Top products</h2>
+                <p class="card-subtitle">Eng ko‘p sotilgan menu itemlar.</p>
+            </div>
+        </div>
+        <canvas id="productChart" class="analytics-canvas" height="220"></canvas>
+        <div class="analytics-list compact-list">
+            {% for item in top_products %}
+            <div class="analytics-item">
+                <span>{{ item.name }}</span>
+                <strong>x{{ item.quantity }}</strong>
+            </div>
+            {% empty %}
+            <div class="empty-state">Sales data yo‘q.</div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+
+<section class="analytics-board">
+    <article class="analytics-card">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Kitchen health</h2>
+                <p class="card-subtitle">Zakaz navbatlari.</p>
+            </div>
+            <a class="btn btn-secondary" href="/kitchen/">Open KDS</a>
+        </div>
+        <div class="analytics-list">
+            {% for row in kitchen_status_rows %}
+            <div class="analytics-item">
+                <span>{{ row.status }}</span>
+                <strong>{{ row.count }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="analytics-card">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Floor status</h2>
+                <p class="card-subtitle">Stollar holati.</p>
+            </div>
+            <a class="btn btn-secondary" href="/tables/">Open floor</a>
+        </div>
+        <div class="analytics-list">
+            {% for row in table_status_rows %}
+            <div class="analytics-item">
+                <span>{{ row.status }}</span>
+                <strong>{{ row.count }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="analytics-card">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Inventory alerts</h2>
+                <p class="card-subtitle">{{ low_stock_count }} product minimumga yaqin.</p>
+            </div>
+            <a class="btn btn-danger" href="/inventory-dashboard/">Stock</a>
+        </div>
+        <div class="analytics-list">
+            {% for product in low_stock_rows %}
+            <div class="analytics-item">
+                <span>{{ product.name }}</span>
+                <strong>{{ product.quantity|floatformat:1 }} {{ product.get_unit_display }}</strong>
+            </div>
+            {% empty %}
+            <div class="empty-state">Low stock yo‘q.</div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+
+<section class="analytics-board">
+    <article class="analytics-card">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Payment totals</h2>
+                <p class="card-subtitle">To‘lov turlari bo‘yicha tushum.</p>
+            </div>
+        </div>
+        <div class="analytics-list">
+            {% for row in payment_rows %}
+            <div class="analytics-item">
+                <span>{{ row.method }}</span>
+                <strong>{{ row.total|money:currency }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="analytics-card">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Busiest tables</h2>
+                <p class="card-subtitle">Faol stollar va savdo.</p>
+            </div>
+        </div>
+        <div class="analytics-list">
+            {% for row in busiest_table_rows %}
+            <div class="analytics-item">
+                <span>Table {{ row.table }} · {{ row.status }}</span>
+                <strong>{{ row.total|money:currency }}</strong>
+            </div>
+            {% empty %}
+            <div class="empty-state">Table activity yo‘q.</div>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="analytics-card">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Waste & shifts</h2>
+                <p class="card-subtitle">Smena va waste nazorati.</p>
+            </div>
+        </div>
+        <div class="analytics-list">
+            <div class="analytics-item">
+                <span>Open shifts</span>
+                <strong>{{ open_shift_count }}</strong>
+            </div>
+            <div class="analytics-item">
+                <span>Closed shifts</span>
+                <strong>{{ closed_shift_count }}</strong>
+            </div>
+            {% for item in most_wasted_products %}
+            <div class="analytics-item">
+                <span>{{ item.product__name }}</span>
+                <strong>{{ item.total_waste }}</strong>
+            </div>
+            {% empty %}
+            <div class="analytics-item">
+                <span>Waste</span>
+                <strong>0</strong>
+            </div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+
+{{ sales_chart|json_script:"sales-chart-data" }}
+{{ payment_chart|json_script:"payment-chart-data" }}
+{{ hourly_chart|json_script:"hourly-chart-data" }}
+{{ waiter_chart|json_script:"waiter-chart-data" }}
+{{ top_product_chart|json_script:"product-chart-data" }}
+
+<script>
+    const readChartData = (id) => JSON.parse(document.getElementById(id).textContent);
+
+    const clearCanvas = (ctx, width, height) => {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, width, height);
+    };
+
+    const fitCanvas = (canvas) => {
+        const ratio = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * ratio;
+        canvas.height = canvas.getAttribute('height') * ratio;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(ratio, ratio);
+        return { ctx, width: rect.width, height: Number(canvas.getAttribute('height')) };
+    };
+
+    const drawBars = (id, data, color = '#22c55e') => {
+        const canvas = document.getElementById(id);
+        if (!canvas) return;
+        const { ctx, width, height } = fitCanvas(canvas);
+        clearCanvas(ctx, width, height);
+        const values = data.values || [];
+        const labels = data.labels || [];
+        const max = Math.max(...values, 1);
+        const gap = 10;
+        const chartTop = 24;
+        const chartBottom = height - 34;
+        const barWidth = Math.max(14, (width - gap * (values.length + 1)) / Math.max(values.length, 1));
+
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        values.forEach((value, index) => {
+            const x = gap + index * (barWidth + gap);
+            const barHeight = ((chartBottom - chartTop) * value) / max;
+            const y = chartBottom - barHeight;
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, barWidth, Math.max(barHeight, 4));
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(labels[index] || '', x + barWidth / 2, height - 12);
+        });
+    };
+
+    const drawDonut = (id, data) => {
+        const canvas = document.getElementById(id);
+        if (!canvas) return;
+        const { ctx, width, height } = fitCanvas(canvas);
+        clearCanvas(ctx, width, height);
+        const values = data.values || [];
+        const labels = data.labels || [];
+        const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#14b8a6', '#64748b'];
+        const total = values.reduce((sum, value) => sum + value, 0) || 1;
+        const cx = width / 2;
+        const cy = height / 2 - 12;
+        const radius = Math.min(width, height) / 3.4;
+        let start = -Math.PI / 2;
+
+        values.forEach((value, index) => {
+            const angle = (value / total) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, radius, start, start + angle);
+            ctx.fillStyle = colors[index % colors.length];
+            ctx.fill();
+            start += angle;
+        });
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
+        ctx.fillStyle = '#0f172a';
+        ctx.fill();
+
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        labels.slice(0, 4).forEach((label, index) => {
+            const x = 18 + (index % 2) * (width / 2);
+            const y = height - 34 + Math.floor(index / 2) * 18;
+            ctx.fillStyle = colors[index % colors.length];
+            ctx.fillRect(x, y - 9, 10, 10);
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillText(label, x + 16, y);
+        });
+    };
+
+    const renderCharts = () => {
+        drawBars('salesChart', readChartData('sales-chart-data'), '#22c55e');
+        drawDonut('paymentChart', readChartData('payment-chart-data'));
+        drawBars('hourlyChart', readChartData('hourly-chart-data'), '#f59e0b');
+        drawBars('waiterChart', readChartData('waiter-chart-data'), '#8b5cf6');
+        drawBars('productChart', readChartData('product-chart-data'), '#38bdf8');
+    };
+
+    window.addEventListener('load', renderCharts);
+    window.addEventListener('resize', renderCharts);
+</script>
+
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate - Tables
+{% endblock %}
+
+{% block content %}
+
+<div class="tables-page">
+
+    <!-- HEADER -->
+
+    <div class="tables-header">
+
+        <div>
+
+            <p class="section-label">
+                Floor service
+            </p>
+
+            <h1 class="page-title">
+                Restaurant Tables
+            </h1>
+
+            <p class="page-subtitle">
+                Open or continue orders by table
+            </p>
+
+        </div>
+
+        <div class="floor-stats">
+            <span>{{ occupied_tables }} occupied</span>
+            <span>{{ free_tables }} free</span>
+            <span>{{ held_orders }} held</span>
+        </div>
+
+    </div>
+
+
+    <!-- TABLE GRID -->
+
+    <div class="tables-grid">
+
+        {% for table in tables %}
+
+        <div class="table-card">
+
+            <!-- TOP -->
+
+            <div class="table-top">
+
+                <div>
+
+                    <h2>
+                        Table {{ table.table_number }}
+                    </h2>
+
+                    <p>
+                        Seats: {{ table.seats }}
+                    </p>
+
+                </div>
+
+                <span class="table-status status-{{ table.status }}">
+
+                    {{ table.status }}
+
+                </span>
+
+            </div>
+
+
+            <!-- CENTER -->
+
+            <div class="table-center">
+
+                {% if table.active_order %}
+
+                <div class="table-order-meta">
+                    <strong>Order #{{ table.active_order.id }}</strong>
+                    <span>{{ table.active_order.get_order_type_display }}</span>
+                    <span class="order-age" data-created="{{ table.active_order.created_at|date:'c' }}">00:00</span>
+                    {% if table.active_order.priority_flag != 'normal' %}
+                    <span class="priority-chip priority-{{ table.active_order.priority_flag }}">
+                        {{ table.active_order.priority_flag }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% else %}
+
+                <div class="table-empty-icon">
+                    🍽️
+                </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- FOOTER -->
+
+            <div class="table-footer">
+
+                <a
+                    href="{% url 'create_order' table.id %}"
+                    class="table-btn"
+                >
+
+                    {% if table.active_order %}
+                        Open Order
+                    {% else %}
+                        Open Table
+                    {% endif %}
+
+                </a>
+
+                <a
+                    href="{% url 'repeat_last_order' table.id %}"
+                    class="table-btn table-btn-secondary"
+                >
+                    Repeat Last
+                </a>
+
+                {% if table.active_order %}
+
+                    {% if table.active_order.status == 'held' %}
+
+                    <a
+                        href="{% url 'recall_order' table.active_order.id %}"
+                        class="table-btn table-btn-success"
+                    >
+                        Recall
+                    </a>
+
+                    {% else %}
+
+                    <a
+                        href="{% url 'hold_order' table.active_order.id %}"
+                        class="table-btn table-btn-warning"
+                    >
+                        Hold
+                    </a>
+
+                    {% endif %}
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        {% empty %}
+
+        <div class="empty-state">
+
+            <div class="empty-icon">
+                🍽️
+            </div>
+
+            <h3>
+                No tables found
+            </h3>
+
+            <p>
+                Add restaurant tables from admin panel
+            </p>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+<script>
+    function updateOrderAges(){
+        document.querySelectorAll('[data-created]').forEach(function(node){
+            var created = new Date(node.dataset.created);
+            var seconds = Math.max(0, Math.floor((Date.now() - created.getTime()) / 1000));
+            var minutes = Math.floor(seconds / 60);
+            var hours = Math.floor(minutes / 60);
+            var text = hours > 0
+                ? hours + 'h ' + (minutes % 60) + 'm'
+                : minutes + 'm';
+            node.textContent = text;
+        });
+    }
+
+    updateOrderAges();
+    setInterval(updateOrderAges, 30000);
+</script>
+
+{% endblock %}

@@ -1,0 +1,632 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate POS
+{% endblock %}
+
+{% block content %}
+
+<div class="pos-workspace {% if not active_order and not direct_mode %}tables-mode{% endif %}">
+
+    <aside class="pos-order-panel">
+        <div class="pos-panel-head">
+            <div>
+                <p class="pos-kicker">Current Order</p>
+                <h1>
+                    {% if active_order %}
+                        T {{ active_order.table.table_number }} - #{{ active_order.id }}
+                    {% elif direct_mode %}
+                        Direct Sale
+                    {% else %}
+                        Tables
+                    {% endif %}
+                </h1>
+            </div>
+            <span class="pos-live">POS Active</span>
+        </div>
+
+        {% if not active_order and not direct_mode %}
+        <div class="pos-shift-card">
+            <span>Open session</span>
+            <strong>{{ active_shift.opening_cash }}</strong>
+            <small>Cashier: {{ request.user.username }}</small>
+        </div>
+
+        <div class="pos-side-actions">
+            <a href="{% url 'pos_terminal' %}?direct=1">Direct Sale</a>
+            <a href="{% url 'pos_orders' %}">Orders</a>
+            <a href="{% url 'pos_reservations' %}">Reservation</a>
+            <a href="{% url 'floor_editor' %}">Edit Floor</a>
+            <a href="{% url 'qr_generator' %}">QR Codes</a>
+        </div>
+        {% endif %}
+
+        <div class="pos-waiter-card">
+            <span>Waiter</span>
+            {% if current_waiter %}
+                <strong>{{ current_waiter.get_full_name|default:current_waiter.username }}</strong>
+                <a href="{% url 'waiter_pin_logout' %}">Switch waiter</a>
+            {% else %}
+                <form method="post" action="{% url 'waiter_pin_login' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <input name="waiter_pin" type="password" inputmode="numeric" placeholder="Waiter PIN">
+                    <button type="submit">Enter</button>
+                </form>
+            {% endif %}
+            <a class="pos-waiter-link" href="{% url 'waiter_commission_dashboard' %}">Bugungi komissiya</a>
+        </div>
+
+        <div class="pos-cart-list">
+            {% if not active_order and not direct_mode %}
+                <div class="pos-empty-state">
+                    <div>▦</div>
+                    <strong>Stol tanlang</strong>
+                    <span>Istalgan stolni bosib register oynasida zakaz oching.</span>
+                </div>
+            {% elif cart_items %}
+                {% for item in cart_items %}
+                    <div class="pos-cart-row">
+                        <div>
+                            {% if active_order %}
+                            <strong>{{ item.menu_item.name }}</strong>
+                            <span>{{ item.quantity }} x {{ currency_symbol }}{{ item.menu_item.price }}</span>
+                            {% if item.variant %}
+                            <span>Variant: {{ item.variant.name }} (+{{ currency_symbol }}{{ item.variant.extra_price }})</span>
+                            {% endif %}
+                            {% for modifier in item.modifiers.all %}
+                            <span>{{ modifier.modifier_option.name }} (+{{ currency_symbol }}{{ modifier.extra_price }})</span>
+                            {% endfor %}
+                            {% if item.notes %}
+                            <span>Note: {{ item.notes }}</span>
+                            {% endif %}
+                            {% else %}
+                            <strong>{{ item.product.name }}</strong>
+                            <span>{{ item.quantity }} x {{ currency_symbol }}{{ item.product.price }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="pos-cart-controls">
+                            {% if active_order %}
+                            <a href="{% url 'adjust_order_cart_item' item.id 'decrease' %}">-</a>
+                            <b>{{ item.quantity }}</b>
+                            <a href="{% url 'adjust_order_cart_item' item.id 'increase' %}">+</a>
+                            {% else %}
+                            <a href="{% url 'decrease_quantity' forloop.counter0 %}">-</a>
+                            <b>{{ item.quantity }}</b>
+                            <a href="{% url 'increase_quantity' forloop.counter0 %}">+</a>
+                            {% endif %}
+                        </div>
+                        {% if active_order %}
+                        <strong class="pos-cart-price">{{ currency_symbol }}{{ item.get_total }}</strong>
+                        {% else %}
+                        <strong class="pos-cart-price">{{ currency_symbol }}{{ item.subtotal }}</strong>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="pos-empty-state">
+                    <div>🛒</div>
+                    <strong>Cart is empty</strong>
+                    <span>Mahsulot tanlang va to‘lovni bosing.</span>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if active_order or direct_mode %}
+        <div class="pos-order-note">
+            <input type="text" placeholder="Add order note...">
+            <a href="{% url 'hold_cart' %}">Hold</a>
+        </div>
+
+        <div class="pos-summary">
+            <div>
+                <span>Subtotal</span>
+                <strong>{{ currency_symbol }}{{ active_order.subtotal_amount|default:total }}</strong>
+            </div>
+            <div>
+                <span>Tax</span>
+                <strong>{{ currency_symbol }}0</strong>
+            </div>
+            <div class="pos-total-row">
+                <span>Total</span>
+                <strong id="posTotal" data-total="{{ total|floatformat:0 }}" data-currency="{{ currency_symbol }}">{{ currency_symbol }}{{ total }}</strong>
+            </div>
+        </div>
+
+        <form method="post" class="pos-payment-form" id="posPaymentForm" data-offline-queue>
+            {% csrf_token %}
+
+            <label class="pos-cash-box">
+                <span>Naqd summa</span>
+                <input
+                    id="posCashReceived"
+                    name="cash_received"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="decimal"
+                    value="{{ total|floatformat:0 }}"
+                    {% if not cart_items %}disabled{% endif %}
+                >
+                <input type="hidden" name="cash_received_currency" value="BASE">
+            </label>
+
+            <div class="pos-change-row">
+                <span>Qaytim</span>
+                <strong id="posChange">$0.00</strong>
+            </div>
+
+            <div class="pos-payment-grid">
+                {% if active_order %}
+                <a href="{% url 'generate_bill' active_order.id %}?next=/pos/" class="pos-pay cash">Oplata</a>
+                <a href="{% url 'send_to_kitchen' active_order.id %}?next=/pos/?table={{ active_order.table_id }}" class="pos-pay card">Kitchen</a>
+                {% else %}
+                <button
+                    type="submit"
+                    formaction="{% url 'complete_payment' 'cash' %}"
+                    class="pos-pay cash"
+                    {% if not cart_items %}disabled{% endif %}
+                >
+                    Cash
+                </button>
+                <button
+                    type="submit"
+                    formaction="{% url 'complete_payment' 'card' %}"
+                    class="pos-pay card"
+                    {% if not cart_items %}disabled{% endif %}
+                >
+                    Card
+                </button>
+                <button
+                    type="submit"
+                    formaction="{% url 'complete_payment' 'click' %}"
+                    class="pos-pay click"
+                    {% if not cart_items %}disabled{% endif %}
+                >
+                    Click
+                </button>
+                <button
+                    type="submit"
+                    formaction="{% url 'complete_payment' 'payme' %}"
+                    class="pos-pay payme"
+                    {% if not cart_items %}disabled{% endif %}
+                >
+                    Payme
+                </button>
+                {% endif %}
+            </div>
+        </form>
+
+        {% if active_order %}
+        <a href="{% url 'hold_order' active_order.id %}" class="pos-clear-btn">Hold Order</a>
+        {% else %}
+        <a href="{% url 'clear_cart' %}" class="pos-clear-btn">Clear Cart</a>
+        {% endif %}
+        {% endif %}
+    </aside>
+
+    <main class="pos-product-panel">
+        <div class="pos-topbar">
+            <div class="pos-tabs">
+                <a class="{% if not active_order and not direct_mode %}active{% endif %}" href="{% url 'pos_terminal' %}">Tables</a>
+                <a href="{% url 'pos_orders' %}">Orders</a>
+                <a class="{% if active_order or direct_mode %}active{% endif %}" href="{% url 'pos_terminal' %}?direct=1">Register</a>
+                <a href="{% url 'pos_reservations' %}">Reservation</a>
+                <span>
+                    {% if active_order %}
+                        Table {{ active_order.table.table_number }}
+                    {% elif direct_mode %}
+                        Direct Sale
+                    {% else %}
+                        Floor
+                    {% endif %}
+                </span>
+            </div>
+
+            {% if active_order or direct_mode %}
+            <input
+                id="posSearch"
+                type="search"
+                placeholder="Search products..."
+                autocomplete="off"
+            >
+            {% endif %}
+        </div>
+
+        {% if not active_order and not direct_mode %}
+        <div class="pos-floor-shell">
+            <div class="pos-floor-toolbar">
+                <div>
+                    <strong>Main Floor</strong>
+                    <span>Stol ustiga bosing: zakaz shu POS oynada ochiladi.</span>
+                </div>
+                <div>
+                    <a href="{% url 'floor_editor' %}">✎ Edit</a>
+                    <a href="{% url 'qr_generator' %}"># QR</a>
+                </div>
+            </div>
+
+            <div class="pos-floor-plan">
+                {% for table in tables %}
+                    {% if table.status == 'cleaning' %}
+                    <a
+                        href="{% url 'mark_table_free' table.id %}"
+                        class="pos-floor-table {{ table.status }}"
+                        style="left:{{ table.pos_x }}px; top:{{ table.pos_y }}px; width:{{ table.pos_width }}px; height:{{ table.pos_height }}px;"
+                    >
+                        <b>{{ table.table_number }}</b>
+                        <span>Cleaned?</span>
+                    </a>
+                    {% else %}
+                    <a
+                        href="{% url 'open_table_register' table.id %}"
+                        class="pos-floor-table {{ table.status }}"
+                        style="left:{{ table.pos_x }}px; top:{{ table.pos_y }}px; width:{{ table.pos_width }}px; height:{{ table.pos_height }}px;"
+                    >
+                        <b>{{ table.table_number }}</b>
+                        <span>{{ table.seats }} seats</span>
+                    </a>
+                    {% endif %}
+                {% empty %}
+                    <span class="pos-no-tables">No tables</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="pos-category-strip">
+            {% for key, label in categories %}
+                <button
+                    type="button"
+                    class="{% if forloop.first %}active{% endif %}"
+                    data-category="{{ key }}"
+                >
+                    {{ label }}
+                </button>
+            {% endfor %}
+        </div>
+
+        <div class="pos-products-grid">
+            {% if active_order %}
+                {% for combo in combo_meals %}
+                <article
+                    class="pos-product-card combo-card"
+                    data-category="combo"
+                    data-name="{{ combo.name|lower }}"
+                >
+                    <a href="#" class="pos-product-hit" data-open-modal="combo-modal-{{ combo.id }}">
+                        <div class="pos-product-image">
+                            {% if combo.image %}
+                                <img src="{{ combo.image.url }}" alt="{{ combo.name }}">
+                            {% else %}
+                                <span>🍱</span>
+                            {% endif %}
+                        </div>
+                        <div class="pos-product-meta">
+                            <strong>{{ combo.name }}</strong>
+                            <span>{{ currency_symbol }}{{ combo.get_total_price }} · {{ combo.discount_percent }}% off</span>
+                        </div>
+                    </a>
+                    <a href="#" class="pos-add-btn" data-open-modal="combo-modal-{{ combo.id }}">+</a>
+
+                    <div class="pos-config-modal" id="combo-modal-{{ combo.id }}" aria-hidden="true">
+                        <form method="post" action="{% url 'add_combo_to_pos_order' active_order.id combo.id %}" class="pos-config-card combo-builder" data-offline-queue>
+                            {% csrf_token %}
+                            <div class="pos-config-head">
+                                <div>
+                                    <strong>{{ combo.name }}</strong>
+                                    <span>Set price: {{ currency_symbol }}{{ combo.get_total_price }}</span>
+                                </div>
+                                <button type="button" data-close-modal>×</button>
+                            </div>
+
+                            {% for combo_item in combo.items.all %}
+                            <label class="pos-config-field">
+                                {{ combo_item.name }}
+                                <select name="combo_item_{{ combo_item.id }}">
+                                    <option value="{{ combo_item.id }}">{{ combo_item.name }} ({{ currency_symbol }}{{ combo_item.price }})</option>
+                                    {% for replacement in menu_items %}
+                                        {% if replacement.id != combo_item.id %}
+                                        <option value="{{ replacement.id }}">{{ replacement.name }} ({{ currency_symbol }}{{ replacement.price }})</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </label>
+                            {% endfor %}
+
+                            <p class="combo-builder-note">
+                                Narxi teng bo‘lsa bepul almashadi, qimmatroq mahsulotda faqat farq qo‘shiladi.
+                            </p>
+
+                            <button type="submit" class="pos-config-submit">Add Set Menu</button>
+                        </form>
+                    </div>
+                </article>
+                {% endfor %}
+            {% endif %}
+
+            {% for item in menu_items %}
+                <article
+                    class="pos-product-card"
+                    data-category="{{ item.category }}"
+                    data-name="{{ item.name|lower }}"
+                >
+                    <a
+                        href="{% if active_order %}#{% else %}{% url 'add_to_cart' item.id %}{% endif %}"
+                        class="pos-product-hit"
+                        {% if active_order %}data-open-modal="product-modal-{{ item.id }}"{% endif %}
+                    >
+                        <div class="pos-product-image">
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                            {% else %}
+                                <span>🍔</span>
+                            {% endif %}
+                        </div>
+                        <div class="pos-product-meta">
+                            <strong>{{ item.name }}</strong>
+                            <span>{{ currency_symbol }}{{ item.price }}</span>
+                        </div>
+                    </a>
+                    <a
+                        href="{% if active_order %}#{% else %}{% url 'add_to_cart' item.id %}{% endif %}"
+                        class="pos-add-btn"
+                        {% if active_order %}data-open-modal="product-modal-{{ item.id }}"{% endif %}
+                    >+</a>
+
+                    {% if active_order %}
+                    <div class="pos-config-modal" id="product-modal-{{ item.id }}" aria-hidden="true">
+                        <form method="post" action="{% url 'add_to_order_cart' active_order.id item.id %}" class="pos-config-card" data-offline-queue>
+                            {% csrf_token %}
+                            <div class="pos-config-head">
+                                <div>
+                                    <strong>{{ item.name }}</strong>
+                                    <span>{{ currency_symbol }}{{ item.price }}</span>
+                                </div>
+                                <button type="button" data-close-modal>×</button>
+                            </div>
+
+                            <label class="pos-config-field">
+                                Variant
+                                <select name="variant">
+                                    <option value="">Standard</option>
+                                    {% for variant in item.variants.all %}
+                                        {% if variant.available %}
+                                        <option value="{{ variant.id }}">{{ variant.name }} (+{{ currency_symbol }}{{ variant.extra_price }})</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </label>
+
+                            <div class="pos-config-options">
+                                {% for group in item.modifier_groups.all %}
+                                    <div>
+                                        <strong>{{ group.name }}</strong>
+                                        {% for option in group.options.all %}
+                                        <label>
+                                            <input type="checkbox" name="modifiers" value="{{ option.id }}">
+                                            {{ option.name }} (+{{ currency_symbol }}{{ option.extra_price }})
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                {% empty %}
+                                    <span>No modifiers.</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="pos-config-grid">
+                                <label>
+                                    Course
+                                    <select name="course">
+                                        <option value="starter">Starter</option>
+                                        <option value="main" selected>Main</option>
+                                        <option value="dessert">Dessert</option>
+                                        <option value="drinks">Drinks</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    Guest
+                                    <input name="guest_name" placeholder="Guest name">
+                                </label>
+                            </div>
+
+                            <label class="pos-config-field">
+                                Notes
+                                <textarea name="notes" placeholder="No onion, allergy, kitchen note"></textarea>
+                            </label>
+
+                            <button type="submit" class="pos-config-submit">Add Item</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </article>
+            {% empty %}
+                <div class="pos-empty-products">Menu item yo‘q.</div>
+            {% endfor %}
+        </div>
+        <div class="pos-pagination" {% if not active_order and not direct_mode %}hidden{% endif %}>
+            <button type="button" id="posPrevPage">‹</button>
+            <span id="posPageInfo">1 / 1</span>
+            <button type="button" id="posNextPage">›</button>
+        </div>
+        {% endif %}
+    </main>
+
+    <aside class="pos-tables-panel">
+        <div class="pos-panel-head">
+            <div>
+                <p class="pos-kicker">Tables</p>
+                <h2>Floor</h2>
+            </div>
+            <a href="{% url 'qr_generator' %}" class="pos-qr-link">QR</a>
+        </div>
+
+        <div class="pos-table-map">
+            {% for table in tables|slice:":12" %}
+                {% if table.status == 'cleaning' %}
+                <a
+                    href="{% url 'mark_table_free' table.id %}"
+                    class="pos-table-tile {{ table.status }}"
+                >
+                    <span>{{ table.table_number }}</span>
+                    <small>Cleaned?</small>
+                </a>
+                {% else %}
+                <a
+                    href="{% url 'open_table_register' table.id %}"
+                    class="pos-table-tile {{ table.status }}"
+                >
+                    <span>{{ table.table_number }}</span>
+                    <small>{{ table.get_status_display }}</small>
+                </a>
+                {% endif %}
+            {% empty %}
+                <span class="pos-no-tables">No tables</span>
+            {% endfor %}
+        </div>
+
+        <div class="pos-legend">
+            <span><i class="free"></i>Free</span>
+            <span><i class="occupied"></i>Occupied</span>
+            <span><i class="reserved"></i>Reserved</span>
+            <span><i class="cleaning"></i>Cleaning</span>
+        </div>
+
+        <div class="pos-held-list">
+            <h3>Held Orders</h3>
+            {% for held_order in held_orders %}
+                <div class="pos-held-row">
+                    <span>Hold #{{ forloop.counter }}</span>
+                    <a href="{% url 'resume_held_order' forloop.counter0 %}">Recall</a>
+                </div>
+            {% empty %}
+                <p>No held orders.</p>
+            {% endfor %}
+        </div>
+    </aside>
+
+</div>
+
+<script>
+(() => {
+    const totalNode = document.getElementById('posTotal');
+    const cashInput = document.getElementById('posCashReceived');
+    const changeNode = document.getElementById('posChange');
+    const searchInput = document.getElementById('posSearch');
+    const cards = Array.from(document.querySelectorAll('.pos-product-card'));
+    const categoryButtons = Array.from(document.querySelectorAll('.pos-category-strip [data-category]'));
+    const prevPageButton = document.getElementById('posPrevPage');
+    const nextPageButton = document.getElementById('posNextPage');
+    const pageInfo = document.getElementById('posPageInfo');
+    const allCategoryButton = categoryButtons.find((button) => button.dataset.category === 'all');
+    let activeCategory = 'all';
+    let currentPage = 1;
+
+    const getCardsPerPage = () => {
+        const grid = document.querySelector('.pos-products-grid');
+        if (!grid) {
+            return 8;
+        }
+        const gap = 14;
+        const minCardWidth = 150;
+        const minCardHeight = 178;
+        const columns = Math.max(Math.floor((grid.clientWidth + gap) / (minCardWidth + gap)), 1);
+        const rows = Math.max(Math.floor((grid.clientHeight + gap) / (minCardHeight + gap)), 1);
+        return Math.max(columns * rows, columns);
+    };
+
+    const formatMoney = (value) => `${totalNode?.dataset.currency || ''}${Number(value || 0).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    })}`;
+
+    const updateChange = () => {
+        if (!totalNode || !cashInput || !changeNode) {
+            return;
+        }
+        const total = Number(totalNode.dataset.total || 0);
+        const received = Number(cashInput.value || 0);
+        changeNode.textContent = formatMoney(Math.max(received - total, 0));
+    };
+
+    const filterProducts = () => {
+        const query = (searchInput?.value || '').toLowerCase().trim();
+        const visibleCards = cards.filter((card) => {
+            return (
+                (activeCategory === 'all' || card.dataset.category === activeCategory)
+                && (!query || card.dataset.name.includes(query))
+            );
+        });
+        const cardsPerPage = getCardsPerPage();
+        const totalPages = Math.max(Math.ceil(visibleCards.length / cardsPerPage), 1);
+        currentPage = Math.min(currentPage, totalPages);
+        const start = (currentPage - 1) * cardsPerPage;
+        const activePageCards = new Set(visibleCards.slice(start, start + cardsPerPage));
+
+        cards.forEach((card) => {
+            card.hidden = !activePageCards.has(card);
+        });
+
+        if (pageInfo) {
+            pageInfo.textContent = `${currentPage} / ${totalPages}`;
+        }
+        if (prevPageButton) {
+            prevPageButton.disabled = currentPage <= 1;
+        }
+        if (nextPageButton) {
+            nextPageButton.disabled = currentPage >= totalPages;
+        }
+    };
+
+    categoryButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            activeCategory = button.dataset.category;
+            currentPage = 1;
+            categoryButtons.forEach((item) => item.classList.toggle('active', item === button));
+            filterProducts();
+        });
+    });
+
+    prevPageButton?.addEventListener('click', () => {
+        currentPage = Math.max(currentPage - 1, 1);
+        filterProducts();
+    });
+
+    nextPageButton?.addEventListener('click', () => {
+        currentPage += 1;
+        filterProducts();
+    });
+
+    document.querySelectorAll('[data-open-modal]').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            const modal = document.getElementById(button.dataset.openModal);
+            modal?.classList.add('open');
+            modal?.setAttribute('aria-hidden', 'false');
+        });
+    });
+
+    document.querySelectorAll('[data-close-modal], .pos-config-modal').forEach((node) => {
+        node.addEventListener('click', (event) => {
+            if (event.target !== node && !event.target.matches('[data-close-modal]')) {
+                return;
+            }
+            const modal = node.closest('.pos-config-modal') || node;
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        });
+    });
+
+    cashInput?.addEventListener('input', updateChange);
+    searchInput?.addEventListener('input', () => {
+        activeCategory = 'all';
+        categoryButtons.forEach((item) => item.classList.toggle('active', item === allCategoryButton));
+        currentPage = 1;
+        filterProducts();
+    });
+    window.addEventListener('resize', filterProducts);
+    updateChange();
+    filterProducts();
+})();
+</script>
+
+{% endblock %}

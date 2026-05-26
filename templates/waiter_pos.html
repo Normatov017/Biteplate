@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Waiter POS
+{% endblock %}
+
+{% block content %}
+
+<div class="waiter-page">
+
+    <div class="waiter-header">
+
+        <div>
+
+            <p class="section-label">
+                Order detail
+            </p>
+
+            <h1 class="page-title">
+                Order #{{ order.id }}
+            </h1>
+
+            <p class="page-subtitle">
+                Table {{ table.table_number }}
+            </p>
+
+        </div>
+
+        <div class="status-badge">
+
+            {{ order.status }}
+
+        </div>
+
+    </div>
+
+    <div class="waiter-grid">
+
+        <!-- MENU -->
+
+        <div class="waiter-menu">
+
+            <div class="card-header">
+
+                <h2>
+                    Menu
+                </h2>
+
+                <p>
+                    Add items to this order
+                </p>
+
+            </div>
+
+            <div class="menu-grid">
+
+                {% for item in menu_items %}
+
+                <div class="menu-card">
+
+                    {% if item.image %}
+                    <img
+                        src="{{ item.image.url }}"
+                        class="menu-image"
+                    >
+                    {% endif %}
+
+                    <div class="menu-content">
+
+                        <h3>
+                            {{ item.name }}
+                        </h3>
+
+                        <p>
+                            {{ item.description|default:"Premium menu item" }}
+                        </p>
+
+                    </div>
+
+                    <div class="menu-footer">
+
+                        <strong>
+                            ${{ item.price }}
+                        </strong>
+
+                        <a
+                            href="{% url 'add_to_order' order.id item.id %}"
+                            class="menu-add-btn"
+                        >
+                            +
+                        </a>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+        <!-- ORDER -->
+
+        <div class="current-order-card">
+
+            <div class="card-header">
+
+                <h2>
+                    Current Order
+                </h2>
+
+                <p>
+                    Active table cart
+                </p>
+
+            </div>
+
+            {% if order.items.all %}
+
+            <div class="order-items">
+
+                {% for item in order.items.all %}
+
+                <div class="order-item">
+
+                    <div>
+
+                        <h4>
+                            {{ item.menu_item.name }}
+                        </h4>
+
+                        <p>
+                            ×{{ item.quantity }}
+                        </p>
+
+                    </div>
+
+                    <strong>
+                        ${{ item.subtotal }}
+                    </strong>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            {% else %}
+
+            <div class="empty-order">
+
+                <h3>
+                    Order is empty
+                </h3>
+
+                <p>
+                    Add menu items from the left
+                </p>
+
+            </div>
+
+            {% endif %}
+
+            <div class="order-total">
+
+                <span>Total</span>
+
+                <strong>
+                    ${{ order.total }}
+                </strong>
+
+            </div>
+
+            <div class="order-actions">
+
+                <a
+                    href="{% url 'send_to_kitchen' order.id %}"
+                    class="kitchen-btn"
+                >
+                    Send To Kitchen
+                </a>
+
+                <a
+                    href="{% url 'generate_bill' order.id %}"
+                    class="bill-btn"
+                >
+                    Generate Bill
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

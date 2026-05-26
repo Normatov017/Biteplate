@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Waiter POS
+{% endblock %}
+
+{% block content %}
+
+<div class="waiter-layout">
+
+    <!-- LEFT -->
+
+    <div class="waiter-menu-panel">
+
+        <div class="page-heading">
+
+            <p class="section-label">
+                Order detail
+            </p>
+
+            <h1 class="page-title">
+                Order #{{ order.id }}
+            </h1>
+
+            <p class="page-subtitle">
+                Table {{ table.table_number }}
+            </p>
+
+        </div>
+
+        <div class="menu-grid">
+
+            {% for item in menu_items %}
+
+            <div class="food-card">
+
+                {% if item.image %}
+                <img
+                    src="{{ item.image.url }}"
+                    class="food-image"
+                >
+                {% else %}
+                <div class="food-placeholder">
+                    🍔
+                </div>
+                {% endif %}
+
+                <div class="food-body">
+
+                    <h3>
+                        {{ item.name }}
+                    </h3>
+
+                    <p>
+                        {{ item.description|default:"Premium menu item" }}
+                    </p>
+
+                </div>
+
+                <div class="food-footer">
+
+                    <strong>
+                        ${{ item.price }}
+                    </strong>
+
+                        <a
+                            href="{% url 'add_to_order' order.id item.id %}"
+                            class="food-add-btn"
+                        >
+                            +
+                        </a>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+    <!-- RIGHT -->
+
+    <div class="waiter-cart-panel">
+
+        <div class="cart-header">
+
+            <h2>
+                Current Order
+            </h2>
+
+            <p>
+                Live order cart
+            </p>
+
+        </div>
+
+        {% if order.items.all %}
+
+        <div class="cart-items">
+
+            {% for item in order.items.all %}
+
+            <div class="cart-item">
+
+                <div>
+
+                    <h4>
+                        {{ item.menu_item.name }}
+                    </h4>
+
+                    <p>
+                        Qty: {{ item.quantity }}
+                    </p>
+
+                </div>
+
+                <strong>
+                    ${{ item.subtotal }}
+                </strong>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+        {% else %}
+
+        <div class="empty-cart">
+
+            <div class="empty-icon">
+                🛒
+            </div>
+
+            <h3>
+                Cart Empty
+            </h3>
+
+            <p>
+                Add items from menu
+            </p>
+
+        </div>
+
+        {% endif %}
+
+        <div class="cart-total">
+
+            <span>Total</span>
+
+            <strong>
+                ${{ order.total }}
+            </strong>
+
+        </div>
+
+        <div class="cart-actions">
+
+            <a
+                href="{% url 'send_to_kitchen' order.id %}"
+                class="kitchen-action-btn"
+            >
+                Send Kitchen
+            </a>
+
+            <a
+                href="{% url 'generate_bill' order.id %}"
+                class="bill-action-btn"
+            >
+                Generate Bill
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,842 @@
+{% load money %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout #{{ order.id }}</title>
+
+    <style>
+        *{
+            box-sizing:border-box;
+        }
+
+        body{
+            min-height:100vh;
+            margin:0;
+            padding:24px;
+            display:grid;
+            place-items:center;
+            background:#09090b;
+            color:#18181b;
+            font-family:Inter, Arial, sans-serif;
+        }
+
+        .receipt-page{
+            width:80mm;
+            margin:0 auto;
+            padding:12px 10px;
+            background:#fff;
+            color:#111827;
+        }
+
+        .receipt-only{
+            display:grid;
+            place-items:center;
+            width:min(560px,100%);
+            margin:0 auto;
+            padding:26px;
+            border-radius:12px;
+            background:#fff;
+            box-shadow:0 24px 80px rgba(0,0,0,.34);
+        }
+
+        button,
+        input,
+        select,
+        textarea{
+            font:inherit;
+        }
+
+        .checkout-shell{
+            width:min(1120px,100%);
+            display:grid;
+            grid-template-columns:minmax(320px,.9fr) minmax(360px,1.1fr);
+            overflow:hidden;
+            border-radius:12px;
+            background:#fff;
+            box-shadow:0 24px 80px rgba(0,0,0,.34);
+        }
+
+        .receipt-panel,
+        .payment-panel{
+            padding:32px;
+        }
+
+        .receipt-panel{
+            border-right:1px solid #e4e4e7;
+        }
+
+        .receipt-only .receipt-panel{
+            width:100%;
+            border-right:0;
+            padding:18px;
+        }
+
+        .brand{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:12px;
+            margin-bottom:18px;
+            text-align:left;
+        }
+
+        .brand-mark{
+            width:42px;
+            height:42px;
+            display:grid;
+            place-items:center;
+            border-radius:10px;
+            background:#fbbf24;
+            color:#111827;
+            font-size:22px;
+            font-weight:900;
+            overflow:hidden;
+        }
+
+        .brand-mark img{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
+
+        .brand h1,
+        .payment-panel h2{
+            margin:0;
+            font-size:30px;
+            line-height:1.1;
+        }
+
+        .brand p,
+        .muted{
+            margin:4px 0 0;
+            color:#71717a;
+        }
+
+        .receipt-meta{
+            display:grid;
+            gap:8px;
+            padding:14px 0;
+            border-top:1px dashed #d4d4d8;
+            border-bottom:1px dashed #d4d4d8;
+            background:#fff;
+            margin-bottom:22px;
+        }
+
+        .receipt-meta strong{
+            font-size:20px;
+        }
+
+        .line{
+            height:1px;
+            background:#e4e4e7;
+            margin:18px 0;
+        }
+
+        .item,
+        .summary-row,
+        .total-row,
+        .change-row{
+            display:flex;
+            justify-content:space-between;
+            gap:20px;
+        }
+
+        .item{
+            padding:12px 0;
+            border-bottom:1px solid #f4f4f5;
+            font-size:15px;
+        }
+
+        .item-name{
+            display:grid;
+            gap:3px;
+        }
+
+        .item-name small{
+            color:#71717a;
+            font-size:12px;
+            font-weight:700;
+        }
+
+        .item strong{
+            white-space:nowrap;
+        }
+
+        .summary-row{
+            color:#71717a;
+            margin-bottom:10px;
+        }
+
+        .total-row{
+            align-items:center;
+            padding-top:14px;
+            border-top:1px solid #e4e4e7;
+            font-size:32px;
+            font-weight:900;
+        }
+
+        .total-row strong{
+            color:#7c3aed;
+        }
+
+        .payment-panel{
+            display:grid;
+            align-content:start;
+            gap:18px;
+            background:#fafafa;
+        }
+
+        .payment-methods{
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:12px;
+        }
+
+        .method-card{
+            position:relative;
+            display:flex;
+            align-items:center;
+            gap:12px;
+            min-height:70px;
+            padding:16px;
+            border:2px solid #e4e4e7;
+            border-radius:10px;
+            background:#fff;
+            cursor:pointer;
+            font-weight:900;
+        }
+
+        .method-card input{
+            position:absolute;
+            opacity:0;
+        }
+
+        .method-card:has(input:checked){
+            border-color:#7c3aed;
+            background:#f5f3ff;
+            color:#7c3aed;
+        }
+
+        .method-icon{
+            width:34px;
+            height:34px;
+            display:grid;
+            place-items:center;
+            border-radius:8px;
+            background:#f4f4f5;
+        }
+
+        .cash-box{
+            display:grid;
+            gap:10px;
+            padding:16px;
+            border:1px solid #e4e4e7;
+            border-radius:10px;
+            background:#fff;
+        }
+
+        .cash-box label{
+            color:#52525b;
+            font-weight:800;
+        }
+
+        .cash-box input{
+            width:100%;
+            height:54px;
+            border:1px solid #d4d4d8;
+            border-radius:10px;
+            padding:0 14px;
+            font-size:22px;
+            font-weight:900;
+        }
+
+        .cash-box select{
+            display:none;
+        }
+
+        .quick-cash{
+            display:flex;
+            flex-wrap:wrap;
+            gap:8px;
+        }
+
+        .quick-cash button{
+            min-height:38px;
+            border:1px solid #e4e4e7;
+            border-radius:8px;
+            background:#f4f4f5;
+            padding:0 12px;
+            font-weight:800;
+            cursor:pointer;
+        }
+
+        .change-row{
+            align-items:center;
+            min-height:64px;
+            padding:16px;
+            border-radius:10px;
+            background:#ecfdf5;
+            color:#065f46;
+            font-size:22px;
+            font-weight:900;
+        }
+
+        .split-box{
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:10px;
+            padding:16px;
+            border:1px solid #e4e4e7;
+            border-radius:10px;
+            background:#fff;
+        }
+
+        .split-box > div:first-child,
+        .split-total{
+            grid-column:1 / -1;
+        }
+
+        .split-box h3{
+            margin:0;
+        }
+
+        .split-box p{
+            margin:4px 0 0;
+            color:#71717a;
+        }
+
+        .split-box label{
+            display:grid;
+            gap:6px;
+            color:#52525b;
+            font-weight:800;
+        }
+
+        .split-box input{
+            width:100%;
+            min-height:42px;
+            border:1px solid #d4d4d8;
+            border-radius:10px;
+            padding:0 10px;
+            font-weight:800;
+        }
+
+        .split-total{
+            display:flex;
+            justify-content:space-between;
+            padding-top:10px;
+            border-top:1px solid #e4e4e7;
+            font-weight:900;
+        }
+
+        .error-box{
+            padding:12px 14px;
+            border-radius:10px;
+            background:#fee2e2;
+            color:#991b1b;
+            font-weight:800;
+        }
+
+        .actions{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:12px;
+        }
+
+        .primary-btn,
+        .print-btn,
+        .refund-btn,
+        .back-btn{
+            min-height:56px;
+            border:0;
+            border-radius:10px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            text-decoration:none;
+            font-size:17px;
+            font-weight:900;
+            cursor:pointer;
+        }
+
+        .primary-btn{
+            grid-column:1 / -1;
+            background:#7c3aed;
+            color:#fff;
+        }
+
+        .print-btn{
+            background:#fbbf24;
+            color:#111827;
+        }
+
+        .back-btn{
+            background:#18181b;
+            color:#fff;
+        }
+
+        .refund-btn{
+            width:100%;
+            margin-top:10px;
+            background:#ef4444;
+            color:#fff;
+        }
+
+        .refund-form input{
+            width:100%;
+            height:46px;
+            border:1px solid #d4d4d8;
+            border-radius:10px;
+            padding:0 12px;
+        }
+
+        .adjust-panel{
+            margin-top:18px;
+            padding:14px;
+            border:1px solid #e4e4e7;
+            border-radius:10px;
+            background:#fafafa;
+        }
+
+        .adjust-panel h3{
+            margin:0 0 6px;
+            font-size:15px;
+        }
+
+        .adjust-panel p{
+            margin:0 0 12px;
+            color:#71717a;
+            font-size:12px;
+            font-weight:700;
+        }
+
+        .adjust-row{
+            display:grid;
+            grid-template-columns:1fr 64px;
+            gap:8px;
+            padding:10px 0;
+            border-top:1px solid #e4e4e7;
+        }
+
+        .adjust-row:first-of-type{
+            border-top:0;
+        }
+
+        .adjust-row strong{
+            font-size:13px;
+        }
+
+        .adjust-row small{
+            display:block;
+            margin-top:3px;
+            color:#71717a;
+            font-weight:700;
+        }
+
+        .adjust-row input{
+            width:100%;
+            min-height:38px;
+            border:1px solid #d4d4d8;
+            border-radius:8px;
+            padding:0 8px;
+            font-weight:800;
+        }
+
+        .adjust-row .reason{
+            grid-column:1 / -1;
+        }
+
+        .adjust-row button{
+            min-height:38px;
+            border:0;
+            border-radius:8px;
+            background:#ef4444;
+            color:#fff;
+            font-weight:900;
+            cursor:pointer;
+        }
+
+        @media(max-width:860px){
+            .checkout-shell{
+                grid-template-columns:1fr;
+            }
+
+            .receipt-panel{
+                border-right:0;
+                border-bottom:1px solid #e4e4e7;
+            }
+        }
+
+        @media print{
+            @page{
+                margin:10mm;
+                size:80mm auto;
+            }
+
+            body{
+                padding:0;
+                background:#fff;
+                min-height:auto;
+                display:block;
+            }
+
+            .checkout-shell{
+                display:block;
+                box-shadow:none;
+                width:80mm;
+                margin:0 auto;
+                border-radius:0;
+                overflow:visible;
+            }
+
+            .payment-panel,
+            .actions,
+            .refund-form,
+            .item form,
+            .screen-actions{
+                display:none;
+            }
+
+            .receipt-only{
+                display:block;
+                width:80mm;
+                padding:0;
+                margin:0 auto;
+                box-shadow:none;
+                border-radius:0;
+            }
+
+            .receipt-panel{
+                border:0;
+                padding:0;
+            }
+
+            .brand{
+                margin-bottom:14px;
+            }
+
+            .brand h1{
+                font-size:22px;
+            }
+
+            .receipt-meta{
+                padding:10px 0;
+                margin-bottom:12px;
+            }
+
+            .item{
+                font-size:13px;
+                padding:7px 0;
+            }
+
+            .total-row{
+                font-size:20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="{% if order.is_paid %}receipt-only{% else %}checkout-shell{% endif %}">
+        <section class="receipt-panel">
+            <div class="brand">
+                <div class="brand-mark">
+                    {% if system_settings.restaurant.logo %}
+                        <img src="{{ system_settings.restaurant.logo.url }}" alt="{{ system_settings.restaurant.name }}">
+                    {% else %}
+                        B
+                    {% endif %}
+                </div>
+                <div>
+                    <h1>{{ system_settings.restaurant.name|default:'BitePlate' }}</h1>
+                    <p>{{ system_settings.receipt_header|default:'Premium Restaurant OS' }}</p>
+                </div>
+            </div>
+
+            <div class="receipt-meta">
+                <strong>Receipt #{{ order.id }}</strong>
+                <span>Table {{ order.table.table_number }} · {{ order.get_order_type_display }}</span>
+                <span>{{ order.created_at|date:"d.m.Y H:i" }}</span>
+                {% if system_settings.receipt_show_waiter and order.waiter %}
+                <span>Waiter: {{ order.waiter.get_full_name|default:order.waiter.username }}</span>
+                {% endif %}
+                {% if payment %}
+                <span>Payment: {{ payment.get_method_display }} · {{ payment.status }}</span>
+                {% endif %}
+            </div>
+
+            {% for item in receipt_lines %}
+            <div class="item">
+                <span class="item-name">
+                    {{ item.name }}{% if item.quantity %} ×{{ item.quantity }}{% endif %}
+                    {% if item.note %}
+                    <small>{{ item.note }}</small>
+                    {% endif %}
+                </span>
+                <strong>{{ item.total|money:system_settings.currency }}</strong>
+            </div>
+            {% endfor %}
+
+            <div class="line"></div>
+
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <strong>{{ total|money:system_settings.currency }}</strong>
+            </div>
+            {% if order.discount_amount and order.discount_amount > 0 %}
+            <div class="summary-row">
+                <span>Discount</span>
+                <strong>-{{ order.discount_amount|money:system_settings.currency }}</strong>
+            </div>
+            {% endif %}
+            <div class="summary-row">
+                <span>Tax</span>
+                <strong>{{ 0|money:system_settings.currency }}</strong>
+            </div>
+            <div class="summary-row">
+                <span>Paid</span>
+                <strong>{{ paid_amount|money:system_settings.currency }}</strong>
+            </div>
+            <div class="summary-row">
+                <span>Remaining</span>
+                <strong>{{ remaining_amount|money:system_settings.currency }}</strong>
+            </div>
+            <div class="total-row">
+                <span>Total</span>
+                <strong id="totalAmount" data-total="{{ total }}" data-currency="{{ currency_symbol }}">{{ total|money:system_settings.currency }}</strong>
+            </div>
+            {% if adjustable_items %}
+            <div class="adjust-panel screen-actions">
+                <h3>Order edit / refund</h3>
+                <p>Miqdorni kamaytirish yoki qaytarilgan item uchun sabab yozing.</p>
+                {% for edit_item in adjustable_items %}
+                <form class="adjust-row" method="POST" action="{% url 'refund_order_item' order.id edit_item.id %}">
+                    {% csrf_token %}
+                    <div>
+                        <strong>{{ edit_item.menu_item.name }}</strong>
+                        <small>{{ edit_item.quantity }} available · {{ edit_item.get_total|money:system_settings.currency }}</small>
+                    </div>
+                    <input
+                        name="quantity"
+                        type="number"
+                        min="1"
+                        max="{{ edit_item.quantity }}"
+                        step="1"
+                        value="1"
+                        aria-label="Quantity to reduce"
+                    >
+                    <input
+                        class="reason"
+                        name="reason"
+                        placeholder="Reason: untouched, wrong item..."
+                    >
+                    <button type="submit">
+                        Reduce
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if system_settings.receipt_footer %}
+            <p class="muted">{{ system_settings.receipt_footer }}</p>
+            {% else %}
+            <p class="muted">Tashrifingiz uchun rahmat!</p>
+            {% endif %}
+            {% if order.is_paid %}
+            <div class="actions screen-actions">
+                <button onclick="window.print()" type="button" class="print-btn">
+                    Print Receipt
+                </button>
+                <a href="{% url 'pos_terminal' %}" class="back-btn">
+                    Back to POS
+                </a>
+            </div>
+            {% endif %}
+        </section>
+
+        {% if not order.is_paid %}
+        <section class="payment-panel">
+            <div>
+                <h2>Payment</h2>
+                <p class="muted">To‘lov turini tanlang va naqd bo‘lsa qaytimni hisoblang.</p>
+            </div>
+
+            {% if payment_error %}
+            <div class="error-box">{{ payment_error }}</div>
+            {% endif %}
+
+            <form method="POST" id="paymentForm">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next_url }}">
+
+                <div class="payment-methods">
+                    <label class="method-card">
+                        <input type="radio" name="method" value="cash" {% if selected_method == 'cash' %}checked{% endif %}>
+                        <span class="method-icon">$</span>
+                        Naqd
+                    </label>
+                    <label class="method-card">
+                        <input type="radio" name="method" value="card" {% if selected_method == 'card' %}checked{% endif %}>
+                        <span class="method-icon">▣</span>
+                        Terminal
+                    </label>
+                    <label class="method-card">
+                        <input type="radio" name="method" value="click" {% if selected_method == 'click' %}checked{% endif %}>
+                        <span class="method-icon">C</span>
+                        Click
+                    </label>
+                    <label class="method-card">
+                        <input type="radio" name="method" value="payme" {% if selected_method == 'payme' %}checked{% endif %}>
+                        <span class="method-icon">P</span>
+                        Payme
+                    </label>
+                </div>
+
+                <div class="cash-box" id="cashBox">
+                    <label for="cashReceived">Klient bergan summa</label>
+                    <input
+                        id="cashReceived"
+                        name="cash_received"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="decimal"
+                        value="{{ cash_received|floatformat:0 }}"
+                        placeholder="100000"
+                    >
+                    <select name="cash_received_currency">
+                        <option value="BASE">{{ system_settings.currency|default:'UZS' }}</option>
+                    </select>
+
+                    <div class="quick-cash">
+                        <button type="button" data-cash="{{ total|floatformat:0 }}">Exact</button>
+                        <button type="button" data-cash="50000">50 000</button>
+                        <button type="button" data-cash="100000">100 000</button>
+                        <button type="button" data-cash="200000">200 000</button>
+                    </div>
+                </div>
+
+                <div class="change-row">
+                    <span>Qaytim</span>
+                    <strong id="changeDue">{{ currency_symbol }}{{ change_due }}</strong>
+                </div>
+
+                <div class="split-box">
+                    <div>
+                        <h3>Split payment</h3>
+                        <p>Masalan 100k Click, qolgani naqd yoki terminal.</p>
+                    </div>
+                    <label>
+                        Naqd
+                        <input class="split-input" name="split_cash" type="number" min="0" step="1000" placeholder="0">
+                    </label>
+                    <label>
+                        Terminal
+                        <input class="split-input" name="split_card" type="number" min="0" step="1000" placeholder="0">
+                    </label>
+                    <label>
+                        Click
+                        <input class="split-input" name="split_click" type="number" min="0" step="1000" placeholder="0">
+                    </label>
+                    <label>
+                        Payme
+                        <input class="split-input" name="split_payme" type="number" min="0" step="1000" placeholder="0">
+                    </label>
+                    <div class="split-total">
+                        <span>Split total</span>
+                        <strong id="splitTotal">{{ currency_symbol }}0.00</strong>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="primary-btn" type="submit">
+                        Complete Payment
+                    </button>
+                    <a href="{% url 'order_detail' order.id %}" class="back-btn">
+                        Back
+                    </a>
+                    {% if next_url %}
+                    <a href="{{ next_url }}" class="back-btn">
+                        Back to POS
+                    </a>
+                    {% endif %}
+                    <button onclick="window.print()" type="button" class="print-btn">
+                        Print Receipt
+                    </button>
+                </div>
+            </form>
+
+        </section>
+        {% endif %}
+    </main>
+
+    <script>
+        const total = Number(
+            document.getElementById('totalAmount').dataset.total
+        );
+        const cashInput = document.getElementById('cashReceived');
+        const changeDue = document.getElementById('changeDue');
+        const cashBox = document.getElementById('cashBox');
+        const methodInputs = document.querySelectorAll('input[name="method"]');
+        const splitInputs = document.querySelectorAll('.split-input');
+        const splitTotal = document.getElementById('splitTotal');
+        const currencySymbol = document.getElementById('totalAmount').dataset.currency || '';
+
+        function formatMoney(value){
+            return currencySymbol + Math.max(0, value).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function updateChange(){
+            const method = document.querySelector('input[name="method"]:checked').value;
+            cashBox.style.display = method === 'cash' ? 'grid' : 'none';
+
+            if (method !== 'cash') {
+                changeDue.textContent = currencySymbol + '0.00';
+                return;
+            }
+
+            const received = Number(cashInput.value || 0);
+            changeDue.textContent = formatMoney(received - total);
+        }
+
+        function updateSplitTotal(){
+            let sum = 0;
+            splitInputs.forEach((input) => {
+                sum += Number(input.value || 0);
+            });
+            splitTotal.textContent = formatMoney(sum);
+        }
+
+        document.querySelectorAll('[data-cash]').forEach((button) => {
+            button.addEventListener('click', () => {
+                cashInput.value = button.dataset.cash;
+                updateChange();
+            });
+        });
+
+        document.querySelectorAll('[data-tip]').forEach((button) => {
+            button.addEventListener('click', () => {
+                cashInput.value = Math.round(total + Number(button.dataset.tip || 0));
+                updateChange();
+            });
+        });
+
+        cashInput.addEventListener('input', updateChange);
+        methodInputs.forEach((input) => {
+            input.addEventListener('change', updateChange);
+        });
+        splitInputs.forEach((input) => {
+            input.addEventListener('input', updateSplitTotal);
+        });
+
+        updateChange();
+        updateSplitTotal();
+    </script>
+</body>
+</html>

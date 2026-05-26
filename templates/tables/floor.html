@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Tables
+{% endblock %}
+
+{% block content %}
+
+<div class="tables-page">
+
+    <div class="tables-header">
+
+        <div>
+
+            <p class="section-label">
+                Floor service
+            </p>
+
+            <h1 class="page-title">
+                Restaurant Tables
+            </h1>
+
+            <p class="page-subtitle">
+                Open and manage restaurant seating.
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="floor-layout">
+
+        {% for table in tables %}
+
+        <div class="table-card status-{{ table.status }}">
+
+            <div class="table-number">
+
+                {{ table.number }}
+
+            </div>
+
+            <div class="table-info">
+
+                <h3>
+                    Table {{ table.number }}
+                </h3>
+
+                <p>
+                    {{ table.seats }} seats
+                </p>
+
+            </div>
+
+            <div class="table-status">
+
+                {{ table.status }}
+
+            </div>
+
+            <a
+                href="{% url 'waiter_pos' table.id %}"
+                class="table-action-btn"
+            >
+                Open Table
+            </a>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

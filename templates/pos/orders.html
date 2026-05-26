@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate POS Orders
+{% endblock %}
+
+{% block content %}
+
+<section class="pos-list-page">
+    <div class="pos-topbar">
+        <div class="pos-tabs">
+            <a href="{% url 'pos_terminal' %}">Tables</a>
+            <a class="active" href="{% url 'pos_orders' %}">Orders</a>
+            <a href="{% url 'pos_terminal' %}">Register</a>
+            <a href="{% url 'pos_reservations' %}">Reservation</a>
+        </div>
+        <input id="posOrderSearch" type="search" placeholder="Search orders...">
+    </div>
+
+    <div class="pos-order-list">
+        {% for order in orders %}
+        <a
+            href="{% if order.is_paid %}{% url 'generate_bill' order.id %}{% else %}{% url 'open_table_register' order.table.id %}{% endif %}"
+            class="pos-order-line"
+            data-search="order {{ order.id }} table {{ order.table.table_number }} {{ order.status }} {{ order.payment_method }}"
+        >
+            <div>
+                <strong>Order #{{ order.id }}</strong>
+                <span>{{ order.created_at|date:'M d, H:i' }} · Table {{ order.table.table_number }}</span>
+            </div>
+            <div>
+                <span class="status-pill {% if order.is_paid %}ok{% else %}muted{% endif %}">
+                    {% if order.is_paid %}Paid{% else %}Active{% endif %}
+                </span>
+                <span>{{ order.get_status_display }}</span>
+            </div>
+            <strong>${{ order.total_amount }}</strong>
+        </a>
+        {% empty %}
+        <div class="pos-empty-state">
+            <strong>No orders yet.</strong>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<script>
+(() => {
+    const input = document.getElementById('posOrderSearch');
+    const rows = Array.from(document.querySelectorAll('.pos-order-line'));
+    input?.addEventListener('input', () => {
+        const query = input.value.toLowerCase().trim();
+        rows.forEach((row) => {
+            row.hidden = query && !row.dataset.search.toLowerCase().includes(query);
+        });
+    });
+})();
+</script>
+
+{% endblock %}

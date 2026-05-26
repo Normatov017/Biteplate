@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}BitePlate - Login{% endblock %}
+{% block nav %}{% endblock %}
+{% block main_class %}shell-full{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <section class="card card-pad auth-card">
+        <div class="auth-logo"><span class="brand-mark">B</span><div><h1 class="card-title">BitePlate</h1><p class="card-subtitle">Sign in to your workspace</p></div></div>
+        {% if error %}<div class="alert" style="margin-bottom:14px">{{ error }}</div>{% endif %}
+        <form class="form-stack" method="POST">{% csrf_token %}<div class="field"><label for="username">Username</label><input id="username" name="username" type="text" autocomplete="username" required></div><div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required></div><button class="btn btn-primary btn-lg btn-block" type="submit">Sign in</button></form>
+    </section>
+</div>
+{% endblock %}
+

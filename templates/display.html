@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitePlate - Live Board</title>
+</head>
+<body>
+
+<section class="live-board-page">
+    <header class="live-board-head">
+        <div>
+            <p>Customer Display</p>
+            <h1>Live Order Board</h1>
+        </div>
+        <div class="live-board-status">
+            <span></span>
+            LIVE
+        </div>
+    </header>
+
+    <div class="live-board-columns">
+        <section class="live-board-column preparing">
+            <div class="live-board-column-head">
+                <h2>Tayyorlanmoqda</h2>
+                <strong>{{ preparing_orders|length }}</strong>
+            </div>
+            <div class="live-board-grid">
+                {% for order in preparing_orders %}
+                <article class="live-order-card">
+                    <span>Order</span>
+                    <strong>#{{ order.id }}</strong>
+                    <em>Table {{ order.table.table_number }}</em>
+                </article>
+                {% empty %}
+                <div class="live-board-empty">Hozircha tayyorlanayotgan zakaz yo'q.</div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="live-board-column ready">
+            <div class="live-board-column-head">
+                <h2>Tayyor</h2>
+                <strong>{{ ready_orders|length }}</strong>
+            </div>
+            <div class="live-board-grid">
+                {% for order in ready_orders %}
+                <article class="live-order-card ready" data-ready-order="{{ order.id }}">
+                    <span>Order</span>
+                    <strong>#{{ order.id }}</strong>
+                    <em>Table {{ order.table.table_number }}</em>
+                </article>
+                {% empty %}
+                <div class="live-board-empty">Tayyor zakaz yo'q.</div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</section>
+
+<style>
+*{ box-sizing:border-box; }
+body{
+    margin:0;
+    font-family:Inter, Arial, sans-serif;
+    background:#0b1020;
+}
+.live-board-page{
+    min-height:100vh;
+    padding:36px;
+    background:#0b1020;
+    color:#fff;
+}
+.live-board-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:24px;
+    margin-bottom:30px;
+}
+.live-board-head p{
+    margin:0 0 8px;
+    color:#fbbf24;
+    font-weight:900;
+    text-transform:uppercase;
+}
+.live-board-head h1{
+    margin:0;
+    font-size:54px;
+    line-height:1;
+}
+.live-board-status{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    min-height:48px;
+    padding:0 18px;
+    border:1px solid rgba(52,211,153,.45);
+    border-radius:8px;
+    background:rgba(16,185,129,.12);
+    color:#34d399;
+    font-weight:900;
+}
+.live-board-status span{
+    width:12px;
+    height:12px;
+    border-radius:999px;
+    background:#34d399;
+    box-shadow:0 0 18px #34d399;
+}
+.live-board-columns{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+}
+.live-board-column{
+    min-height:68vh;
+    border:1px solid rgba(148,163,184,.2);
+    border-radius:12px;
+    background:#111827;
+    padding:22px;
+}
+.live-board-column.ready{
+    background:#052e2b;
+}
+.live-board-column-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+}
+.live-board-column-head h2{
+    margin:0;
+    font-size:34px;
+}
+.live-board-column-head strong{
+    display:grid;
+    place-items:center;
+    min-width:54px;
+    height:44px;
+    border-radius:8px;
+    background:#fff;
+    color:#101828;
+    font-size:24px;
+}
+.live-board-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+    gap:16px;
+}
+.live-order-card{
+    display:grid;
+    gap:8px;
+    min-height:150px;
+    padding:20px;
+    border-radius:12px;
+    background:#1f2937;
+    border:1px solid rgba(255,255,255,.08);
+    text-align:center;
+}
+.live-order-card.ready{
+    background:#ecfdf5;
+    color:#065f46;
+    animation:readyPulse 1.5s infinite;
+}
+.live-order-card span{
+    color:#94a3b8;
+    font-weight:900;
+    text-transform:uppercase;
+}
+.live-order-card strong{
+    font-size:58px;
+    line-height:1;
+}
+.live-order-card em{
+    font-style:normal;
+    font-weight:900;
+}
+.live-board-empty{
+    padding:28px;
+    border:1px dashed rgba(148,163,184,.35);
+    border-radius:10px;
+    color:#94a3b8;
+    font-weight:900;
+}
+@keyframes readyPulse{
+    0%,100%{ box-shadow:0 0 0 rgba(16,185,129,0); }
+    50%{ box-shadow:0 0 34px rgba(16,185,129,.35); }
+}
+</style>
+
+<script>
+(() => {
+    const readyCount = document.querySelectorAll('[data-ready-order]').length;
+    if (readyCount > 0 && !sessionStorage.getItem('live-board-ready-' + readyCount)) {
+        sessionStorage.setItem('live-board-ready-' + readyCount, '1');
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.value = 880;
+            gain.gain.value = 0.08;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.22);
+        } catch (error) {}
+    }
+    setTimeout(() => window.location.reload(), 15000);
+})();
+</script>
+</body>
+</html>

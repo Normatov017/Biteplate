@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate - Settings
+{% endblock %}
+
+{% block content %}
+
+<div class="settings-center">
+    <header class="settings-hero">
+        <div>
+            <p class="section-label">Control center</p>
+            <h1 class="page-title">Settings</h1>
+            <p class="page-subtitle">
+                Restaurant, branch, users, inventory purchase and POS settings.
+            </p>
+        </div>
+    </header>
+
+    <section class="settings-grid">
+        <a href="{% url 'admin_studio' %}?section=restaurants" class="settings-card">
+            <span>🏢</span>
+            <strong>Restaurants</strong>
+            <small>{{ restaurant_count }} configured</small>
+        </a>
+        <a href="{% url 'admin_studio' %}?section=restaurants" class="settings-card">
+            <span>🏬</span>
+            <strong>Branches</strong>
+            <small>{{ branch_count }} filial</small>
+        </a>
+        <a href="{% url 'enterprise_dashboard' %}" class="settings-card highlight">
+            <span>▥</span>
+            <strong>Enterprise</strong>
+            <small>Multi-branch dashboard</small>
+        </a>
+        <a href="{% url 'staff_management' %}" class="settings-card">
+            <span>👤</span>
+            <strong>Users & Staff</strong>
+            <small>{{ user_count }} users</small>
+        </a>
+        <a href="{% url 'admin_studio' %}?section=staff" class="settings-card">
+            <span>🛡</span>
+            <strong>Roles</strong>
+            <small>Access control</small>
+        </a>
+        <a href="{% url 'settings_dashboard' %}#pos-settings" class="settings-card">
+            <span>⚙</span>
+            <strong>System Settings</strong>
+            <small>{{ settings_count }} profiles</small>
+        </a>
+        <a href="{% url 'menu_management' %}" class="settings-card">
+            <span>☰</span>
+            <strong>Menu Management</strong>
+            <small>{{ menu_count }} menu items</small>
+        </a>
+        <a href="{% url 'admin_studio' %}?section=inventory" class="settings-card">
+            <span>📦</span>
+            <strong>Inventory Products</strong>
+            <small>{{ product_count }} products</small>
+        </a>
+        <a href="{% url 'admin_studio' %}?section=inventory" class="settings-card">
+            <span>🚚</span>
+            <strong>Suppliers</strong>
+            <small>{{ supplier_count }} suppliers</small>
+        </a>
+        <a href="{% url 'admin_studio' %}?section=inventory" class="settings-card highlight">
+            <span>🧾</span>
+            <strong>New Purchase</strong>
+            <small>{{ purchase_count }} purchase orders</small>
+        </a>
+        <a href="{% url 'qr_generator' %}" class="settings-card highlight">
+            <span>▦</span>
+            <strong>QR Menu</strong>
+            <small>Generate and print table QR codes</small>
+        </a>
+        <a href="{% url 'export_sales_excel' %}" class="settings-card highlight">
+            <span>XL</span>
+            <strong>Export Excel</strong>
+            <small>Sales report .xlsx</small>
+        </a>
+        <a href="{% url 'accounting_dashboard' %}" class="settings-card">
+            <span>₿</span>
+            <strong>Accounting</strong>
+            <small>P&L, cash flow, expenses</small>
+        </a>
+        <a href="{% url 'shift_dashboard' %}" class="settings-card">
+            <span>⏱</span>
+            <strong>Shift Clock</strong>
+            <small>Clock in/out and shift closing</small>
+        </a>
+    </section>
+
+    {% if system_settings %}
+    <section class="settings-pos-card" id="pos-settings">
+        <div>
+            <p class="section-label">POS Settings</p>
+            <h2>Waiter commission & receipt</h2>
+            <p class="page-subtitle">
+                Waiter foizi, chek sarlavhasi va receipt footer dizayni shu yerdan boshqariladi.
+            </p>
+        </div>
+        <form method="post" class="settings-pos-form">
+            {% csrf_token %}
+            <label>
+                Waiter commission %
+                <input name="waiter_commission_percent" type="number" min="0" max="100" step="0.1" value="{{ system_settings.waiter_commission_percent }}">
+            </label>
+            <label>
+                Waiter fixed daily pay
+                <input name="waiter_daily_fixed_pay" type="number" min="0" step="1000" value="{{ system_settings.waiter_daily_fixed_pay }}">
+            </label>
+            <label>
+                Base currency
+                <select name="currency">
+                    <option value="UZS" {% if system_settings.currency == 'UZS' %}selected{% endif %}>UZS</option>
+                    <option value="USD" {% if system_settings.currency == 'USD' %}selected{% endif %}>USD</option>
+                    <option value="RUB" {% if system_settings.currency == 'RUB' %}selected{% endif %}>RUB</option>
+                </select>
+            </label>
+            <label>
+                1 USD = base
+                <input name="usd_to_base_rate" type="number" min="0" step="0.01" value="{{ system_settings.usd_to_base_rate }}">
+            </label>
+            <label>
+                1 RUB = base
+                <input name="rub_to_base_rate" type="number" min="0" step="0.01" value="{{ system_settings.rub_to_base_rate }}">
+            </label>
+            <label>
+                Receipt header
+                <input name="receipt_header" value="{{ system_settings.receipt_header }}">
+            </label>
+            <label>
+                Receipt footer
+                <textarea name="receipt_footer" rows="3">{{ system_settings.receipt_footer }}</textarea>
+            </label>
+            <label class="settings-check">
+                <input name="receipt_show_waiter" type="checkbox" {% if system_settings.receipt_show_waiter %}checked{% endif %}>
+                Show waiter on receipt
+            </label>
+            <label class="settings-check">
+                <input name="telegram_reports_enabled" type="checkbox" {% if system_settings.telegram_reports_enabled %}checked{% endif %}>
+                Telegram daily reports
+            </label>
+            <label>
+                Telegram bot token
+                <input name="telegram_bot_token" value="{{ system_settings.telegram_bot_token|default:'' }}">
+            </label>
+            <label>
+                Telegram chat ID
+                <input name="telegram_chat_id" value="{{ system_settings.telegram_chat_id|default:'' }}">
+            </label>
+            <label>
+                Daily report time
+                <input name="telegram_report_time" type="time" value="{{ system_settings.telegram_report_time|time:'H:i' }}">
+            </label>
+            <button type="submit">Save POS Settings</button>
+            <a href="{% url 'send_telegram_report_now' %}" class="management-action">
+                Send Telegram report now
+            </a>
+        </form>
+    </section>
+    {% endif %}
+</div>
+
+{% endblock %}

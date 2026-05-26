@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load money %}
+
+{% block title %}
+Close Shift
+{% endblock %}
+
+{% block content %}
+
+<section class="shift-page">
+    <header class="shift-head">
+        <div>
+            <p class="shift-kicker">Cashier Operations</p>
+            <h1>Close Shift</h1>
+            <span>Expected cash avtomatik hisoblanadi. Sanab chiqqan pulni kiriting, farq hisobotda qoladi.</span>
+        </div>
+        <a href="{% url 'shift_dashboard' %}" class="shift-card-link">Back</a>
+    </header>
+
+    <div class="shift-grid">
+        <article class="shift-card">
+            <span>Opening cash</span>
+            <strong>{{ shift.opening_cash|money:'UZS' }}</strong>
+            <small>{{ shift.opened_at|date:'d.m.Y H:i' }}</small>
+        </article>
+        <article class="shift-card success">
+            <span>Cash sales</span>
+            <strong>{{ cash_sales|money:'UZS' }}</strong>
+            <small>Naqd to'lovlar bo'yicha.</small>
+        </article>
+        <article class="shift-card accent">
+            <span>Cash in/out</span>
+            <strong>{{ cash_adjustments|money:'UZS' }}</strong>
+            <small>Qo'shish va kassadan olishlar.</small>
+        </article>
+        <article class="shift-card warning">
+            <span>Expected drawer</span>
+            <strong>{{ expected_cash|money:'UZS' }}</strong>
+            <small>Opening + cash sales + cash in/out.</small>
+        </article>
+    </div>
+
+    <div class="shift-layout close-shift-layout">
+        <section class="shift-panel">
+            <div class="shift-panel-head">
+                <h2>Payment totals</h2>
+                <p>Bugungi smena bo'yicha hamma payment methodlar.</p>
+            </div>
+            <div class="shift-methods">
+                {% for row in payments_by_method %}
+                    <div>
+                        <span>{{ row.method|upper }}</span>
+                        <strong>{{ row.total|money:'UZS' }}</strong>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="shift-balance-list">
+                <div>
+                    <span>Total sales</span>
+                    <strong>{{ total_sales|money:'UZS' }}</strong>
+                </div>
+                <div class="total">
+                    <span>Expected cash</span>
+                    <strong>{{ expected_cash|money:'UZS' }}</strong>
+                </div>
+            </div>
+            <a href="{% url 'shift_report_excel' shift.id %}" class="shift-card-link">Download Excel</a>
+        </section>
+
+        <section class="shift-panel">
+            <div class="shift-panel-head">
+                <h2>Close register</h2>
+                <p>Default summa expected cash. Kassada real sanalgan pul boshqa bo'lsa o'zgartiring.</p>
+            </div>
+            <form method="POST" class="shift-close-form">
+                {% csrf_token %}
+                <label>
+                    Counted cash
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="closing_cash"
+                        value="{{ expected_cash|floatformat:2 }}"
+                        required
+                    >
+                </label>
+                <div class="shift-balance-list">
+                    <div>
+                        <span>Report difference</span>
+                        <strong>Counted - expected</strong>
+                    </div>
+                </div>
+                <button type="submit" class="shift-danger">Close Shift</button>
+            </form>
+        </section>
+
+        <section class="shift-panel">
+            <div class="shift-panel-head">
+                <h2>Cash audit</h2>
+                <p>Har bir cash in/out sababi bilan qoladi.</p>
+            </div>
+            <div class="shift-audit-list">
+                {% for movement in cash_movements %}
+                    <div>
+                        <strong>{{ movement.get_movement_type_display }} {{ movement.signed_amount|money:'UZS' }}</strong>
+                        <span>{{ movement.reason }} · {{ movement.created_at|date:'d.m.Y H:i' }}</span>
+                    </div>
+                {% empty %}
+                    <div>
+                        <strong>No cash movements.</strong>
+                        <span>Bu smenada qo'shimcha harakat yo'q.</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</section>
+
+{% endblock %}

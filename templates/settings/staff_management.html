@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate - Staff Management
+{% endblock %}
+
+{% block content %}
+
+<section class="management-page">
+    <header class="management-head">
+        <div>
+            <p class="section-label">Staff</p>
+            <h1 class="page-title">Staff Management</h1>
+            <p class="page-subtitle">User, role, branch, salary va staff status boshqaruvi.</p>
+        </div>
+        <a href="{% url 'admin_studio' %}?section=staff" class="management-action">Roles</a>
+    </header>
+
+    <div class="management-stats">
+        <article>
+            <span>Total Staff</span>
+            <strong>{{ staff.count }}</strong>
+        </article>
+        <article>
+            <span>Active</span>
+            <strong>{{ active_count }}</strong>
+        </article>
+        <article>
+            <span>Waiters</span>
+            <strong>{{ waiter_count }}</strong>
+        </article>
+        <article>
+            <span>Managers</span>
+            <strong>{{ manager_count }}</strong>
+        </article>
+    </div>
+
+    <div class="management-layout">
+        <form method="post" class="management-form">
+            {% csrf_token %}
+            <h2>Quick Add Staff</h2>
+
+            <div class="management-two">
+                <label>
+                    First name
+                    <input name="first_name" type="text" placeholder="Ali">
+                </label>
+                <label>
+                    Last name
+                    <input name="last_name" type="text" placeholder="Nazarov">
+                </label>
+            </div>
+
+            <label>
+                Username
+                <input name="username" type="text" placeholder="waiter_ali" required>
+            </label>
+
+            <div class="management-two">
+                <label>
+                    Password
+                    <input name="password" type="text" value="123456">
+                </label>
+                <label>
+                    Waiter PIN
+                    <input name="waiter_pin" type="text" inputmode="numeric" placeholder="1111">
+                </label>
+            </div>
+
+            <div class="management-two">
+                <label>
+                    Phone
+                    <input name="phone" type="text" placeholder="+998">
+                </label>
+                <label>
+                    Email
+                    <input name="email" type="email" placeholder="staff@biteplate.local">
+                </label>
+            </div>
+
+            <div class="management-two">
+                <label>
+                    Role
+                    <select name="role">
+                        <option value="">No role</option>
+                        {% for role in roles %}
+                            <option value="{{ role.id }}">{{ role.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    Branch
+                    <select name="branch">
+                        {% for branch in branches %}
+                            <option value="{{ branch.id }}">{{ branch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+
+            <div class="management-two">
+                <label>
+                    Salary
+                    <input name="salary" type="number" min="0" step="100000" placeholder="4500000">
+                </label>
+                <label>
+                    Hire date
+                    <input name="hire_date" type="date">
+                </label>
+            </div>
+
+            <div class="management-two">
+                <label>
+                    Birth date
+                    <input name="birth_date" type="date">
+                </label>
+                <label>
+                    Status
+                    <select name="status">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="vacation">Vacation</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="management-checks">
+                <label><input name="is_staff" type="checkbox"> Admin panel access</label>
+            </div>
+
+            <button type="submit">Add Staff</button>
+        </form>
+
+        <div class="management-table-wrap">
+            <table class="management-table">
+                <thead>
+                    <tr>
+                        <th>Staff</th>
+                        <th>Role</th>
+                        <th>Branch</th>
+                        <th>Phone</th>
+                        <th>PIN</th>
+                        <th>Birthday</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in staff %}
+                        <tr>
+                            <td>
+                                <strong>{{ user.full_name|default:user.username }}</strong>
+                                <span>{{ user.username }} · {{ user.employee_id|default:'No employee ID' }}</span>
+                            </td>
+                            <td>{{ user.role.name|default:'No role' }}</td>
+                            <td>{{ user.branch.name|default:'No branch' }}</td>
+                            <td>{{ user.phone|default:'-' }}</td>
+                            <td>{{ user.waiter_pin|default:'-' }}</td>
+                            <td>{{ user.birth_date|default:'-' }}</td>
+                            <td>
+                                <span class="status-pill {% if user.status == 'active' %}ok{% else %}muted{% endif %}">
+                                    {{ user.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-pill muted">Internal</span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8">No staff yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

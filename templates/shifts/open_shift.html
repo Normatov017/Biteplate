@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Open Shift
+{% endblock %}
+
+{% block content %}
+
+<div class="page-head">
+
+    <div>
+
+        <p class="eyebrow">
+
+            Cashier Operations
+
+        </p>
+
+        <h1 class="page-title">
+
+            Open Shift
+
+        </h1>
+
+        <p class="page-copy">
+
+            Start cashier session
+            with opening cash.
+
+        </p>
+
+    </div>
+
+</div>
+
+
+<section class="card card-pad">
+
+    <form method="POST">
+
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+
+        <div class="form-group">
+
+            <label>
+
+                Opening Cash
+
+            </label>
+
+            <input
+                type="number"
+                step="0.01"
+                min="0"
+                name="opening_cash"
+                class="input"
+                placeholder="Masalan 500000"
+                required
+            >
+
+        </div>
+
+        <button
+            type="submit"
+            class="btn btn-success btn-lg"
+        >
+
+            Open Shift & Start POS
+
+        </button>
+
+    </form>
+
+</section>
+
+{% endblock %}

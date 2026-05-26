@@ -1,0 +1,323 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {% block title %}
+            BitePlate
+        {% endblock %}
+    </title>
+
+    <!-- FONT -->
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- CSS -->
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/base.css' %}?v=7"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/app.css' %}?v=8"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/layout.css' %}?v=14"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/sidebar.css' %}?v=7"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/topbar.css' %}?v=7"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/auth.css' %}?v=7"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/pos.css' %}?v=14"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/analytics.css' %}?v=8"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/tables.css' %}?v=12"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/waiter.css' %}?v=7"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/kitchen.css' %}?v=7"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/cashier.css' %}?v=7"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/inventory.css' %}?v=7"
+    >
+
+    {% block extra_head %}
+    {% endblock %}
+
+</head>
+
+<body>
+
+<div class="offline-banner" data-offline-banner>
+    Offline mode: orders are being queued and will sync when connection returns.
+</div>
+
+{% if request.user.is_authenticated %}
+
+<div class="app-shell">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <div>
+
+            <a
+                href="/analytics/"
+                class="sidebar-brand"
+            >
+
+                <div class="sidebar-logo">
+                    B
+                </div>
+
+                <div>
+
+                    <div class="sidebar-title">
+                        BitePlate
+                    </div>
+
+                    <div class="sidebar-subtitle">
+                        Restaurant OS
+                    </div>
+
+                </div>
+
+            </a>
+
+            <div class="sidebar-menu">
+
+                {% if can_view_analytics %}
+                    <a href="/analytics/" class="sidebar-link">
+                        <span class="sidebar-link-icon">📊</span>
+                        <span>Analytics</span>
+                    </a>
+                {% endif %}
+
+                {% if can_view_waiter or can_view_pos %}
+                    <a href="/tables/" class="sidebar-link">
+                        <span class="sidebar-link-icon">🍽</span>
+                        <span>Tables</span>
+                    </a>
+                {% endif %}
+
+                {% if can_view_waiter %}
+                    <a href="/waiter/" class="sidebar-link">
+                        <span class="sidebar-link-icon">🧑‍🍳</span>
+                        <span>Waiter</span>
+                    </a>
+                {% endif %}
+
+                {% if can_view_kitchen %}
+                    <a href="/kitchen/" class="sidebar-link">
+                        <span class="sidebar-link-icon">🔥</span>
+                        <span>Kitchen</span>
+                    </a>
+                {% endif %}
+
+                {% if can_view_billing %}
+                    <a href="/cashier/" class="sidebar-link">
+                        <span class="sidebar-link-icon">💳</span>
+                        <span>Cashier</span>
+                    </a>
+                {% endif %}
+
+                {% if can_view_pos %}
+                    <a href="/pos/" class="sidebar-link">
+                        <span class="sidebar-link-icon">🖥</span>
+                        <span>POS</span>
+                    </a>
+                {% endif %}
+
+                {% if can_view_pos or can_view_billing %}
+                    <a href="/display/" class="sidebar-link">
+                        <span class="sidebar-link-icon">📺</span>
+                        <span>Display</span>
+                    </a>
+                {% endif %}
+
+                {% if can_view_inventory %}
+                    <a href="/inventory-dashboard/" class="sidebar-link">
+                        <span class="sidebar-link-icon">📦</span>
+                        <span>Inventory</span>
+                    </a>
+                {% endif %}
+
+                {% if can_view_settings %}
+                    <a
+                        href="/settings/"
+                        class="sidebar-link"
+                    >
+                        <span class="sidebar-link-icon">🔧</span>
+                        <span>Settings</span>
+                    </a>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+
+            <div class="online-box">
+
+                <span class="online-dot"></span>
+
+                System Online
+
+            </div>
+
+            <a
+                href="/logout/"
+                class="logout-btn"
+            >
+                Logout
+            </a>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+
+    <div class="app-main">
+
+        <header class="topbar">
+
+            <div>
+
+                <h1 class="topbar-title">
+                    BitePlate Command Center
+                </h1>
+
+                <p class="topbar-subtitle">
+                    Sales, tables, kitchen and stock in one workspace
+                </p>
+
+            </div>
+
+            <div class="topbar-right">
+
+                <div class="live-badge">
+
+                    <span class="live-dot"></span>
+
+                    LIVE
+
+                </div>
+
+                <div class="profile-box">
+                    {{ request.user.username }}
+                </div>
+
+            </div>
+
+        </header>
+
+        <main class="page-content">
+
+            {% if messages %}
+
+            <div class="flash-stack">
+
+                {% for message in messages %}
+
+                <div class="flash-message flash-{{ message.tags }}">
+                    {{ message }}
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            {% endif %}
+
+            {% block content %}
+            {% endblock %}
+
+        </main>
+
+    </div>
+
+</div>
+
+{% else %}
+
+<div class="auth-layout">
+
+    {% block auth_content %}
+    {% endblock %}
+
+</div>
+
+{% endif %}
+
+{% block scripts %}
+{% endblock %}
+
+<script src="{% static 'js/offline-pos.js' %}?v=1"></script>
+
+</body>
+</html>

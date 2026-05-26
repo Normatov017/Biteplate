@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Shift Dashboard
+{% endblock %}
+
+{% block content %}
+
+<section class="shift-page">
+    <header class="shift-head">
+        <div>
+            <p class="shift-kicker">Cashier Shift</p>
+            <h1>Shift Dashboard</h1>
+            <span>Kassa ochish, naqd pul harakati va yopish hisoboti.</span>
+        </div>
+        {% if active_shift %}
+        <a href="{% url 'close_shift' active_shift.id %}" class="shift-danger">Close Shift</a>
+        {% else %}
+        <a href="{% url 'open_shift' %}" class="shift-primary">Open Shift</a>
+        {% endif %}
+    </header>
+
+    <div class="shift-grid">
+        <article class="shift-card">
+            <span>Clock</span>
+            {% if active_clock %}
+                <strong>Clocked In</strong>
+                <small>{{ active_clock.clock_in }}</small>
+                <a href="{% url 'clock_out' %}">Clock Out</a>
+            {% else %}
+                <strong>Not Clocked</strong>
+                <small>Start employee attendance.</small>
+                <a href="{% url 'clock_in' %}">Clock In</a>
+            {% endif %}
+        </article>
+
+        {% if active_shift %}
+        <article class="shift-card accent">
+            <span>Opening Cash</span>
+            <strong>${{ active_shift.opening_cash }}</strong>
+            <small>{{ active_shift.opened_at }}</small>
+        </article>
+        <article class="shift-card success">
+            <span>Cash Sales</span>
+            <strong>${{ live_cash_sales }}</strong>
+            <small>Naqd to‘lovlar bo‘yicha.</small>
+        </article>
+        <article class="shift-card warning">
+            <span>Expected Drawer</span>
+            <strong>${{ live_expected_cash }}</strong>
+            <small>Opening + cash sales + cash in/out.</small>
+        </article>
+        {% endif %}
+    </div>
+
+    {% if active_shift %}
+    <div class="shift-layout">
+        <form method="post" action="{% url 'cash_movement' active_shift.id %}" class="shift-panel">
+            {% csrf_token %}
+            <div class="shift-panel-head">
+                <div>
+                    <h2>Cash In / Out</h2>
+                    <p>Naqd pul qo‘shish yoki kassadan olish.</p>
+                </div>
+            </div>
+
+            <label>
+                Type
+                <select name="movement_type">
+                    <option value="in">Cash In</option>
+                    <option value="out">Cash Out</option>
+                </select>
+            </label>
+            <label>
+                Amount
+                <input name="amount" type="number" min="0" step="0.01" placeholder="10000" required>
+            </label>
+            <label>
+                Reason
+                <input name="reason" placeholder="Masalan: supplier payment" required>
+            </label>
+            <button type="submit">Save Movement</button>
+        </form>
+
+        <div class="shift-panel">
+            <div class="shift-panel-head">
+                <div>
+                    <h2>Live Balance</h2>
+                    <p>Bu yerda POS savdolari avtomatik hisoblanadi.</p>
+                </div>
+            </div>
+            <div class="shift-balance-list">
+                <div><span>Opening cash</span><strong>${{ active_shift.opening_cash }}</strong></div>
+                <div><span>Cash sales</span><strong>${{ live_cash_sales }}</strong></div>
+                <div><span>Cash in/out</span><strong>${{ live_cash_adjustments }}</strong></div>
+                <div class="total"><span>Expected drawer</span><strong>${{ live_expected_cash }}</strong></div>
+                <div><span>Total sales all methods</span><strong>${{ live_total_sales }}</strong></div>
+            </div>
+
+            <div class="shift-methods">
+                {% for row in payments_by_method %}
+                <div>
+                    <span>{{ row.method|upper }}</span>
+                    <strong>${{ row.total }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="shift-panel">
+            <div class="shift-panel-head">
+                <div>
+                    <h2>Cash Audit</h2>
+                    <p>Har cash in/out sababi bilan qoladi.</p>
+                </div>
+            </div>
+            <div class="shift-audit-list">
+                {% for movement in cash_movements %}
+                <div>
+                    <strong>{{ movement.get_movement_type_display }} ${{ movement.amount }}</strong>
+                    <span>{{ movement.reason }} · {{ movement.created_at }}</span>
+                </div>
+                {% empty %}
+                <p>No cash movements yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="shift-panel">
+        <div class="shift-panel-head">
+            <div>
+                <h2>Shift History</h2>
+                <p>Yopilgan smenalar va Excel reportlar.</p>
+            </div>
+        </div>
+
+        <div class="shift-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Status</th>
+                        <th>Sales</th>
+                        <th>Orders</th>
+                        <th>Difference</th>
+                        <th>Report</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for shift in shifts %}
+                    <tr>
+                        <td>#{{ shift.id }}</td>
+                        <td>{{ shift.status }}</td>
+                        <td>${{ shift.total_sales }}</td>
+                        <td>{{ shift.total_orders }}</td>
+                        <td>${{ shift.difference }}</td>
+                        <td><a href="{% url 'shift_report_excel' shift.id %}">Excel</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">No shifts yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

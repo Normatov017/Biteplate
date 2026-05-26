@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Enterprise Dashboard
+{% endblock %}
+
+{% block content %}
+
+<section class="pos-list-page">
+    <div class="pos-topbar">
+        <div>
+            <p class="pos-kicker">Multi Branch</p>
+            <h1>Enterprise Dashboard</h1>
+        </div>
+        <div class="pos-tabs">
+            <a href="{% url 'settings_dashboard' %}">Settings</a>
+            <a class="active" href="{% url 'enterprise_dashboard' %}">Branches</a>
+            <a href="{% url 'staff_management' %}">Employees</a>
+        </div>
+    </div>
+
+    <div class="enterprise-kpis">
+        <div><span>Branches</span><strong>{{ total_branches }}</strong></div>
+        <div><span>Orders</span><strong>{{ total_orders }}</strong></div>
+        <div><span>Revenue</span><strong>${{ total_revenue }}</strong></div>
+        <div><span>Staff</span><strong>{{ total_staff }}</strong></div>
+    </div>
+
+    <div class="pos-order-list">
+        {% for row in branch_rows %}
+        <div class="pos-order-line enterprise-line">
+            <div>
+                <strong>{{ row.branch.name }}</strong>
+                <span>{{ row.branch.address|default:'No address' }}</span>
+            </div>
+            <div>
+                <span>Orders: {{ row.orders }}</span>
+                <span>Tables: {{ row.tables }} · Staff: {{ row.staff }}</span>
+            </div>
+            <strong>${{ row.revenue }}</strong>
+        </div>
+        {% empty %}
+        <div class="pos-empty-state">
+            <strong>No branches yet.</strong>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Tables
+{% endblock %}
+
+{% block content %}
+
+<div class="tables-page">
+
+    <div class="tables-header">
+
+        <div>
+
+            <p class="section-label">
+                Floor service
+            </p>
+
+            <h1 class="page-title">
+                Restaurant Tables
+            </h1>
+
+            <p class="page-subtitle">
+                Open or continue orders by table
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="tables-grid">
+
+        {% for table in tables %}
+
+        <div class="table-card">
+
+            <div class="table-top">
+
+                <div>
+
+                    <h2>
+                        Table {{ table.number }}
+                    </h2>
+
+                    <p>
+                        {{ table.seats }} seats
+                    </p>
+
+                </div>
+
+                <span class="table-status">
+
+                    {{ table.status }}
+
+                </span>
+
+            </div>
+
+            <div class="table-center">
+
+                🍽
+
+            </div>
+
+            <a
+                href="{% url 'create_order' table.id %}"
+                class="table-btn"
+            >
+
+                Open Table
+
+            </a>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

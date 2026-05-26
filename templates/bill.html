@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}BitePlate - Bill #{{ order.id }}{% endblock %}
+
+{% block content %}
+<section class="card card-pad center-medium">
+    <div class="card-head">
+        <div>
+            <p class="eyebrow">Bill checkout</p>
+            <h1 class="page-title">Order #{{ order.id }}</h1>
+            <p class="page-copy">Table {{ order.table.table_number }} - single or split payment.</p>
+        </div>
+        <span class="badge status-{{ order.status }}">{{ order.status }}</span>
+    </div>
+
+    {% if messages %}
+    <div class="message-stack">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="list">
+        {% for item in order.items.all %}
+        <div class="item-box">
+            <div>
+                <strong>{{ item.menu_item.name }}</strong>
+                <div class="muted">Qty: {{ item.quantity }}</div>
+            </div>
+            <strong class="price">${{ item.get_total }}</strong>
+        </div>
+        {% empty %}
+        <div class="empty"><strong>No items</strong>This bill has no items.</div>
+        {% endfor %}
+    </div>
+
+    <div class="payment-summary">
+        <article class="card metric metric-accent">
+            <div class="metric-label">Order total</div>
+            <div class="metric-value">${{ total }}</div>
+        </article>
+        <article class="card metric metric-success">
+            <div class="metric-label">Paid</div>
+            <div class="metric-value">${{ paid_total }}</div>
+        </article>
+        <article class="card metric metric-danger">
+            <div class="metric-label">Remaining</div>
+            <div class="metric-value">${{ remaining_total }}</div>
+        </article>
+    </div>
+
+    <div class="grid grid-2 mt-4">
+        {% for key, label in payment_methods %}
+        <a class="btn {% if key == 'cash' %}btn-success{% else %}btn-info{% endif %} btn-lg" href="{% url 'complete_payment' order.id key %}">{{ label }} full pay</a>
+        {% endfor %}
+    </div>
+
+    <form class="split-panel" method="POST" action="{% url 'split_payment' order.id %}">
+        {% csrf_token %}
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Split payment</h2>
+                <p class="card-subtitle">Example: 50% cash and 50% card. Amounts must equal ${{ remaining_total }}.</p>
+            </div>
+            <span class="badge badge-brand">Split</span>
+        </div>
+        <div class="split-grid">
+            {% for key, label in payment_methods %}
+            <div class="split-field">
+                <label for="split-{{ key }}">{{ label }}</label>
+                <input id="split-{{ key }}" name="{{ key }}" type="number" min="0" step="0.01" placeholder="0.00">
+            </div>
+            {% endfor %}
+        </div>
+        <button class="btn btn-primary btn-lg btn-block mt-4" type="submit">Complete split payment</button>
+    </form>
+
+    <div class="payment-history">
+        <div class="card-head">
+            <div>
+                <h2 class="card-title">Payment history</h2>
+                <p class="card-subtitle">Payments already recorded for this order.</p>
+            </div>
+        </div>
+        <div class="list">
+            {% for payment in order.payments.all %}
+            <div class="item-box">
+                <span>{{ payment.method|upper }} <span class="muted">{{ payment.created_at }}</span></span>
+                <strong class="price">${{ payment.amount }}</strong>
+            </div>
+            {% empty %}
+            <div class="empty"><strong>No payments yet</strong>Use full pay or split payment above.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+

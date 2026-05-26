@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate - Kitchen Display
+{% endblock %}
+
+{% block extra_head %}
+<meta http-equiv="refresh" content="15">
+<style>
+body{background:#020617;}
+.kds-simple{padding:28px;color:#fff;}
+.kds-simple-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;}
+.kds-simple-head h1{margin:0;font-size:42px;line-height:1;font-weight:900;}
+.kds-simple-head p{margin:8px 0 0;color:#94a3b8;font-weight:800;}
+.kds-sound{border:0;border-radius:8px;background:#fbbf24;color:#111827;padding:14px 18px;font-weight:900;cursor:pointer;}
+.kds-simple-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+.kds-ticket{border:1px solid #1e293b;border-radius:8px;background:#0f172a;padding:22px;display:grid;gap:16px;min-height:180px;}
+.kds-ticket.ready{border-color:#22c55e;background:#052e1a;}
+.kds-ticket.preparing{border-color:#f59e0b;background:#2f2106;}
+.kds-ticket.waiting{border-color:#38bdf8;background:#082f49;}
+.kds-ticket strong{font-size:38px;line-height:1;}
+.kds-status{font-size:24px;font-weight:900;}
+.kds-meta{color:#cbd5e1;font-weight:800;}
+.kds-items{display:grid;gap:8px;margin-top:4px;}
+.kds-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:8px;background:rgba(15,23,42,.62);color:#fff;font-weight:900;}
+.kds-item small{display:block;margin-top:4px;color:#cbd5e1;font-weight:700;}
+.kds-item strong{font-size:20px;line-height:1;color:#fbbf24;}
+.kds-actions{display:flex;gap:10px;margin-top:auto;}
+.kds-actions a{flex:1;text-align:center;border-radius:8px;padding:13px 10px;text-decoration:none;font-weight:900;background:#1e293b;color:#fff;}
+.kds-actions .start{background:#f59e0b;color:#111827;}
+.kds-actions .ready-btn{background:#22c55e;color:#052e16;}
+.kds-actions .served{background:#3b82f6;}
+.kds-empty{border:1px dashed #334155;border-radius:8px;padding:60px;text-align:center;color:#94a3b8;font-size:22px;font-weight:900;}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="kds-simple">
+    <header class="kds-simple-head">
+        <div>
+            <h1>Kitchen Display</h1>
+            <p>{{ waiting_count }} waiting · {{ preparing_count }} preparing · {{ ready_count }} ready</p>
+        </div>
+        <button type="button" class="kds-sound" id="kdsSound">Sound On</button>
+    </header>
+
+    {% if orders %}
+    <div class="kds-simple-grid">
+        {% for order in orders %}
+        <article class="kds-ticket {{ order.kitchen_status }}" data-status="{{ order.kitchen_status }}">
+            <strong>Order #{{ order.id }}</strong>
+            <div class="kds-status">
+                {% if order.kitchen_status == 'ready' %}
+                    Tayyor
+                {% elif order.kitchen_status == 'preparing' %}
+                    Tayyorlanmoqda
+                {% else %}
+                    Navbatda
+                {% endif %}
+            </div>
+            <div class="kds-meta">
+                Table {{ order.table.table_number|default:'-' }}
+                {% if order.priority_flag != 'normal' %} · {{ order.priority_flag|upper }}{% endif %}
+            </div>
+            <div class="kds-items">
+                {% for item in order.kitchen_items %}
+                <div class="kds-item">
+                    <span>
+                        {{ item.menu_item.name }}
+                        {% if item.notes %}<small>{{ item.notes }}</small>{% endif %}
+                    </span>
+                    <strong>x{{ item.quantity }}</strong>
+                </div>
+                {% empty %}
+                <div class="kds-item">
+                    <span>Mahsulot yo'q</span>
+                    <strong>x0</strong>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="kds-actions">
+                {% if order.kitchen_status == 'waiting' %}
+                    <a class="start" href="{% url 'update_order_status' order.id 'preparing' %}">Start</a>
+                {% endif %}
+                {% if order.kitchen_status != 'ready' %}
+                    <a class="ready-btn" href="{% url 'update_order_status' order.id 'ready' %}">Ready</a>
+                {% else %}
+                    <a class="served" href="{% url 'update_order_status' order.id 'served' %}">Served</a>
+                {% endif %}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+        <div class="kds-empty">Hozircha kitchen uchun order yo‘q.</div>
+    {% endif %}
+</section>
+
+<script>
+(function(){
+    const hasReady = Boolean(document.querySelector('.kds-ticket.ready'));
+    const soundButton = document.getElementById('kdsSound');
+
+    function beep(){
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 880;
+        gain.gain.value = 0.12;
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+        oscillator.start();
+        setTimeout(function(){
+            oscillator.stop();
+            ctx.close();
+        }, 350);
+    }
+
+    soundButton.addEventListener('click', beep);
+    if (hasReady) {
+        setTimeout(beep, 500);
+    }
+})();
+</script>
+{% endblock %}

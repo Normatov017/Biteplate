@@ -1,0 +1,11 @@
+<div id="toast" class="badge badge-brand" style="display:none;position:fixed;top:82px;right:24px;z-index:60;padding:12px 16px;border-radius:10px"></div>
+<script>
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.style.display = 'inline-flex';
+  setTimeout(() => toast.style.display = 'none', 3000);
+}
+</script>
+

@@ -1,0 +1,18 @@
+.inventory-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:16px;
+}
+
+.inventory-card,
+.stock-card{
+    border-radius:8px;
+    border:1px solid rgba(148,163,184,.15);
+    background:linear-gradient(180deg,rgba(15,23,42,.94),rgba(10,15,28,.94));
+}
+
+.stock-low,
+.inventory-alert-text{
+    color:#f87171;
+    font-weight:800;
+}

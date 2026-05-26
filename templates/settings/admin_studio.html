@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load money %}
+
+{% block title %}
+BitePlate - Admin Studio
+{% endblock %}
+
+{% block content %}
+
+<section class="management-page admin-studio-page">
+    <header class="management-head">
+        <div>
+            <p class="section-label">Internal admin</p>
+            <h1 class="page-title">Admin Studio</h1>
+            <p class="page-subtitle">
+                Restaurant, filial, role, supplier, product, purchase va combo endi Django adminsiz shu yerdan qo‘shiladi.
+            </p>
+        </div>
+        <a href="{% url 'settings_dashboard' %}" class="management-action">Settings</a>
+    </header>
+
+    <div class="management-stats">
+        <article>
+            <span>Restaurants</span>
+            <strong>{{ restaurants.count }}</strong>
+        </article>
+        <article>
+            <span>Branches</span>
+            <strong>{{ branches.count }}</strong>
+        </article>
+        <article>
+            <span>Roles</span>
+            <strong>{{ roles.count }}</strong>
+        </article>
+        <article>
+            <span>Products</span>
+            <strong>{{ products.count }}</strong>
+        </article>
+    </div>
+
+    <nav class="admin-studio-nav">
+        <a href="{% url 'admin_studio' %}?section=restaurants" class="{% if section == 'restaurants' %}active{% endif %}">Restaurants</a>
+        <a href="{% url 'admin_studio' %}?section=staff" class="{% if section == 'staff' %}active{% endif %}">Staff & Roles</a>
+        <a href="{% url 'admin_studio' %}?section=inventory" class="{% if section == 'inventory' %}active{% endif %}">Inventory</a>
+        <a href="{% url 'admin_studio' %}?section=menu" class="{% if section == 'menu' %}active{% endif %}">Menu & Combo</a>
+    </nav>
+
+    <div class="admin-studio-grid">
+        <form method="post" class="management-form" id="restaurants" {% if section != 'restaurants' %}hidden{% endif %}>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="restaurants">
+            <input type="hidden" name="form_type" value="restaurant">
+            <h2>Restaurant</h2>
+            <label>Name <input name="name" required placeholder="BitePlate Downtown"></label>
+            <div class="management-two">
+                <label>Phone <input name="phone" placeholder="+998"></label>
+                <label>Email <input name="email" type="email" placeholder="info@restaurant.uz"></label>
+            </div>
+            <div class="management-two">
+                <label>
+                    Currency
+                    <select name="currency">
+                        <option value="UZS">UZS</option>
+                        <option value="USD">USD</option>
+                        <option value="RUB">RUB</option>
+                    </select>
+                </label>
+                <label>Language <input name="language" value="uz"></label>
+            </div>
+            <label>Address <textarea name="address" rows="2"></textarea></label>
+            <button type="submit">Add Restaurant</button>
+        </form>
+
+        <form method="post" class="management-form" id="branches" {% if section != 'restaurants' %}hidden{% endif %}>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="restaurants">
+            <input type="hidden" name="form_type" value="branch">
+            <h2>Branch</h2>
+            <label>
+                Restaurant
+                <select name="restaurant" required>
+                    {% for restaurant in restaurants %}
+                        <option value="{{ restaurant.id }}">{{ restaurant.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Name <input name="name" required placeholder="Main Hall"></label>
+            <label>Phone <input name="phone" placeholder="+998"></label>
+            <label>Address <textarea name="address" rows="2"></textarea></label>
+            <button type="submit">Add Branch</button>
+        </form>
+
+        <form method="post" class="management-form" id="roles" {% if section != 'staff' %}hidden{% endif %}>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="staff">
+            <input type="hidden" name="form_type" value="role">
+            <h2>Role</h2>
+            <label>
+                Restaurant
+                <select name="restaurant" required>
+                    {% for restaurant in restaurants %}
+                        <option value="{{ restaurant.id }}">{{ restaurant.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Name <input name="name" required placeholder="Waiter"></label>
+            <label>Description <textarea name="description" rows="3"></textarea></label>
+            <button type="submit">Add Role</button>
+        </form>
+
+        <form method="post" class="management-form" id="suppliers" {% if section != 'inventory' %}hidden{% endif %}>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="inventory">
+            <input type="hidden" name="form_type" value="supplier">
+            <h2>Supplier</h2>
+            <label>Name <input name="name" required placeholder="Fresh Market"></label>
+            <div class="management-two">
+                <label>Phone <input name="phone" placeholder="+998"></label>
+                <label>Email <input name="email" type="email"></label>
+            </div>
+            <label>Address <textarea name="address" rows="2"></textarea></label>
+            <button type="submit">Add Supplier</button>
+        </form>
+
+        <form method="post" class="management-form" id="products" {% if section != 'inventory' %}hidden{% endif %}>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="inventory">
+            <input type="hidden" name="form_type" value="product">
+            <h2>Inventory Product</h2>
+            <label>Name <input name="name" required placeholder="Chicken fillet"></label>
+            <div class="management-two">
+                <label>Quantity <input name="quantity" type="number" min="0" step="0.01" value="0"></label>
+                <label>Min quantity <input name="minimum_quantity" type="number" min="0" step="0.01" value="5"></label>
+            </div>
+            <div class="management-two">
+                <label>
+                    Unit
+                    <select name="unit">
+                        {% for value, label in unit_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>Cost price <input name="cost_price" type="number" min="0" step="0.01" value="0"></label>
+            </div>
+            <label>Barcode <input name="barcode"></label>
+            <button type="submit">Add Product</button>
+        </form>
+
+        <form method="post" class="management-form" id="purchases" {% if section != 'inventory' %}hidden{% endif %}>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="inventory">
+            <input type="hidden" name="form_type" value="purchase">
+            <h2>Purchase Order</h2>
+            <label>
+                Supplier
+                <select name="supplier" required>
+                    {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Product
+                <select name="product" required>
+                    {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div class="management-two">
+                <label>Invoice <input name="invoice_number" placeholder="PO-00012"></label>
+                <label>Due date <input name="due_date" type="date"></label>
+            </div>
+            <div class="management-two">
+                <label>Quantity <input name="quantity" type="number" min="0.01" step="0.01" value="1"></label>
+                <label>Cost price <input name="cost_price" type="number" min="0" step="0.01" value="0"></label>
+            </div>
+            <label>Notes <textarea name="notes" rows="2"></textarea></label>
+            <button type="submit">Create Purchase</button>
+        </form>
+
+        <form method="post" class="management-form" id="combos" {% if section != 'menu' %}hidden{% endif %}>
+            {% csrf_token %}
+            <input type="hidden" name="section" value="menu">
+            <input type="hidden" name="form_type" value="combo">
+            <h2>Combo / Set Menu</h2>
+            <label>Name <input name="name" required placeholder="Lavash Set"></label>
+            <div class="management-two">
+                <label>Fixed price <input name="fixed_price" type="number" min="0" step="1000" value="0"></label>
+                <label>Discount % <input name="discount_percent" type="number" min="0" max="100" step="0.1" value="0"></label>
+            </div>
+            <div class="admin-studio-checklist">
+                <strong>Items</strong>
+                {% for item in menu_items %}
+                    <label>
+                        <input type="checkbox" name="items" value="{{ item.id }}">
+                        <span>{{ item.name }} · {{ item.price }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+            <label>Description <textarea name="description" rows="2"></textarea></label>
+            <button type="submit">Add Combo</button>
+        </form>
+    </div>
+
+    <div class="management-table-wrap admin-studio-recent" {% if section != 'inventory' %}hidden{% endif %}>
+        <h2>Stock on hand</h2>
+        <table class="management-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Min</th>
+                    <th>Unit</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.quantity }}</td>
+                        <td>{{ product.minimum_quantity }}</td>
+                        <td>{{ product.get_unit_display }}</td>
+                        <td>{{ product.inventory_value|money:'UZS' }}</td>
+                        <td>{% if product.is_low_stock %}Low stock{% else %}OK{% endif %}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">No stock products yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Purchase history</h2>
+        <table class="management-table">
+            <thead>
+                <tr>
+                    <th>Purchase</th>
+                    <th>Supplier</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for purchase in purchases %}
+                    <tr>
+                        <td>{{ purchase.invoice_number }}</td>
+                        <td>{{ purchase.supplier.name }}</td>
+                        <td>{{ purchase.due_date|default:'-' }}</td>
+                        <td>{{ purchase.get_status_display }}</td>
+                        <td>{{ purchase.total_amount|money:'UZS' }}</td>
+                        <td>
+                            {% if purchase.status != 'received' %}
+                                <a class="management-action compact" href="{% url 'receive_purchase' purchase.id %}?next={% url 'admin_studio' %}?section=inventory">Receive stock</a>
+                            {% else %}
+                                <span class="status-pill ok">Received</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">No purchases yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate - Accounting
+{% endblock %}
+
+{% block content %}
+
+<section class="management-page">
+    <header class="management-head">
+        <div>
+            <p class="section-label">Accounting</p>
+            <h1 class="page-title">P&L and Cash Flow</h1>
+            <p class="page-subtitle">Savdo, purchase, cash in/out va xarajatlar bo‘yicha tezkor buxgalteriya.</p>
+        </div>
+        <a href="{% url 'shift_dashboard' %}" class="management-action">Cash Shifts</a>
+    </header>
+
+    <form method="get" class="management-form accounting-filter">
+        <div class="management-two">
+            <label>From <input type="date" name="date_from" value="{{ date_from }}"></label>
+            <label>To <input type="date" name="date_to" value="{{ date_to }}"></label>
+        </div>
+        <button type="submit">Filter</button>
+    </form>
+
+    <div class="management-stats">
+        <article>
+            <span>Revenue</span>
+            <strong>{{ revenue }}</strong>
+        </article>
+        <article>
+            <span>Expenses</span>
+            <strong>{{ expenses }}</strong>
+        </article>
+        <article>
+            <span>Cash In</span>
+            <strong>{{ cash_in }}</strong>
+        </article>
+        <article>
+            <span>Net Profit</span>
+            <strong>{{ net_profit }}</strong>
+        </article>
+    </div>
+
+    <div class="management-layout">
+        <div class="management-table-wrap">
+            <table class="management-table">
+                <thead>
+                    <tr>
+                        <th>Payment Method</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in method_rows %}
+                        <tr>
+                            <td>{{ row.method }}</td>
+                            <td>{{ row.total }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="management-table-wrap">
+            <table class="management-table">
+                <thead>
+                    <tr>
+                        <th>Cash Movement</th>
+                        <th>Amount</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movement in recent_movements %}
+                        <tr>
+                            <td>{{ movement.get_movement_type_display }}</td>
+                            <td>{{ movement.signed_amount }}</td>
+                            <td>{{ movement.reason }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3">No cash movements yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="management-table-wrap admin-studio-recent">
+        <table class="management-table">
+            <thead>
+                <tr>
+                    <th>Purchase</th>
+                    <th>Supplier</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for purchase in recent_purchases %}
+                    <tr>
+                        <td>{{ purchase.invoice_number }}</td>
+                        <td>{{ purchase.supplier.name }}</td>
+                        <td>{{ purchase.get_status_display }}</td>
+                        <td>{{ purchase.total_amount }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">No purchases yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% endblock %}

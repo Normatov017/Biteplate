@@ -1,0 +1,20 @@
+.cashier-grid,
+.billing-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:16px;
+}
+
+.cashier-card,
+.bill-card,
+.payment-card{
+    border-radius:8px;
+    border:1px solid rgba(148,163,184,.15);
+    background:linear-gradient(180deg,rgba(15,23,42,.94),rgba(10,15,28,.94));
+}
+
+.cashier-total,
+.bill-total{
+    color:#fbbf24;
+    font-weight:900;
+}

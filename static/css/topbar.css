@@ -1,0 +1,54 @@
+.topbar{
+    position:sticky;
+    top:0;
+    z-index:50;
+    height:auto;
+    min-height:76px;
+    padding:14px 28px;
+    background:rgba(5,8,22,.82);
+    border-bottom:1px solid rgba(148,163,184,.16);
+    backdrop-filter:blur(18px);
+}
+
+.topbar-title{
+    font-size:22px;
+    line-height:1.2;
+}
+
+.topbar-subtitle{
+    margin-top:4px;
+    color:#94a3b8;
+    font-size:14px;
+}
+
+.topbar-right{
+    gap:10px;
+}
+
+.live-badge,
+.profile-box{
+    border-radius:8px;
+    min-height:38px;
+    padding:8px 12px;
+    border:1px solid rgba(148,163,184,.18);
+    background:rgba(15,23,42,.72);
+}
+
+.live-badge{
+    color:#34d399;
+    border-color:rgba(52,211,153,.25);
+}
+
+@media(max-width:760px){
+    .topbar{
+        align-items:flex-start;
+        flex-direction:column;
+        gap:12px;
+        padding:16px 18px;
+    }
+
+    .topbar-right{
+        width:100%;
+        justify-content:space-between;
+    }
+}

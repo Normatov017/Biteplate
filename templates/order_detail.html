@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+{% load money %}
+
+{% block title %}
+BitePlate - Order
+{% endblock %}
+
+{% block content %}
+
+<div class="enterprise-pos-page">
+
+    <aside class="epos-categories">
+        <div class="epos-order-badge">
+            <span>Table {{ order.table.table_number }}</span>
+            <strong>Order #{{ order.id }}</strong>
+        </div>
+
+        <button type="button" class="epos-category active" data-category="all">
+            <strong>All Items</strong>
+            <span>{{ menu_items|length }} items</span>
+        </button>
+        <button type="button" class="epos-category" data-category="main">
+            <strong>Entrees</strong>
+            <span>Main dishes</span>
+        </button>
+        <button type="button" class="epos-category" data-category="starter">
+            <strong>Appetizers</strong>
+            <span>Starters</span>
+        </button>
+        <button type="button" class="epos-category" data-category="beverage">
+            <strong>Beverages</strong>
+            <span>Drinks</span>
+        </button>
+        <button type="button" class="epos-category" data-category="dessert">
+            <strong>Desserts</strong>
+            <span>Sweet</span>
+        </button>
+    </aside>
+
+    <section class="epos-products">
+        <div class="epos-searchbar">
+            <input id="orderSearch" type="search" placeholder="Search menu items...">
+        </div>
+
+        <div class="epos-products-grid">
+            {% for item in menu_items %}
+            <article class="epos-product-card" data-name="{{ item.name|lower }}" data-category="{{ item.category }}">
+                <a href="{% url 'add_to_order' order.id item.id %}" class="epos-product">
+                    <div class="epos-product-image">
+                        {% if item.image %}
+                        <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                        {% else %}
+                        <span>🍔</span>
+                        {% endif %}
+                    </div>
+                    <h3>{{ item.name }}</h3>
+                    <strong>{{ item.price|money:system_settings.currency }}</strong>
+                </a>
+                <a href="{% url 'add_to_order' order.id item.id %}?send=1" class="epos-send-now">
+                    Kitchen
+                </a>
+            </article>
+            {% endfor %}
+        </div>
+        <div class="epos-pagination" aria-label="Menu pagination">
+            <button type="button" id="orderPrevPage">‹</button>
+            <strong id="orderPageStatus">1 / 1</strong>
+            <button type="button" id="orderNextPage">›</button>
+        </div>
+
+        {% if combo_meals %}
+        <div class="epos-combos">
+            <h2>Combos</h2>
+            <div class="combo-grid">
+                {% for combo in combo_meals %}
+                <div class="combo-card">
+                    <strong>{{ combo.name }}</strong>
+                    <span>{{ combo.item_count }} items · {{ combo.discount_percent }}% off</span>
+                    <a href="{% url 'add_combo_to_order' order.id combo.id %}" class="btn btn-primary">Add Bundle</a>
+                    <a href="{% url 'add_combo_to_order' order.id combo.id %}?send=1" class="btn btn-success">Kitchen</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </section>
+
+    <aside class="epos-cart">
+        <div class="epos-cart-header">
+            <div>
+                <h2>Current Order</h2>
+                <p>Table {{ order.table.table_number }} · Dine In</p>
+            </div>
+            <span class="epos-live-dot">POS Active</span>
+        </div>
+
+        <form
+            method="POST"
+            action="{% url 'update_order_workflow' order.id %}"
+            class="epos-priority"
+            data-offline-queue
+        >
+            {% csrf_token %}
+            <input type="hidden" name="order_type" value="dine_in">
+            <input type="hidden" name="printer_route" value="{{ order.printer_route }}">
+            <input type="hidden" name="discount_amount" value="{{ order.discount_amount }}">
+            <input type="hidden" name="service_charge_percent" value="{{ order.service_charge_percent }}">
+            <select name="priority_flag">
+                <option value="normal" {% if order.priority_flag == 'normal' %}selected{% endif %}>Normal</option>
+                <option value="rush" {% if order.priority_flag == 'rush' %}selected{% endif %}>RUSH</option>
+                <option value="vip" {% if order.priority_flag == 'vip' %}selected{% endif %}>VIP</option>
+            </select>
+            <button type="submit">Save</button>
+        </form>
+
+        <div class="epos-cart-items">
+            {% if order_items %}
+                {% for item in order_items %}
+                <form
+                    method="POST"
+                    action="{% url 'update_order_item' item.id %}"
+                    class="epos-cart-item"
+                    data-offline-queue
+                >
+                    {% csrf_token %}
+                    <details class="epos-line-editor">
+                        <summary class="epos-cart-item-top">
+                            <span>
+                                <strong>{{ item.quantity }}x {{ item.menu_item.name }}</strong>
+                                {% if item.notes %}
+                                    <small>{{ item.notes|truncatechars:36 }}</small>
+                                {% else %}
+                                    <small>{{ item.get_course_display }}</small>
+                                {% endif %}
+                            </span>
+                            <b>{{ item.get_total|money:system_settings.currency }}</b>
+                        </summary>
+
+                        <div class="epos-item-controls">
+                            <a
+                                href="{% url 'adjust_order_item_quantity' item.id 'decrease' %}"
+                                class="epos-qty-btn"
+                            >
+                                -
+                            </a>
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" aria-label="Qty">
+                            <a
+                                href="{% url 'adjust_order_item_quantity' item.id 'increase' %}"
+                                class="epos-qty-btn"
+                            >
+                                +
+                            </a>
+                            <select name="course" aria-label="Course">
+                                <option value="starter" {% if item.course == 'starter' %}selected{% endif %}>Starter</option>
+                                <option value="main" {% if item.course == 'main' %}selected{% endif %}>Main</option>
+                                <option value="dessert" {% if item.course == 'dessert' %}selected{% endif %}>Dessert</option>
+                                <option value="drinks" {% if item.course == 'drinks' %}selected{% endif %}>Drinks</option>
+                            </select>
+                            <button type="submit">Update</button>
+                        </div>
+
+                        <label class="epos-note-field">
+                            <span>Note</span>
+                            <textarea
+                                name="notes"
+                                placeholder="Allergy, no onion, extra cheese..."
+                            >{{ item.notes|default:'' }}</textarea>
+                        </label>
+
+                        {% if modifier_options %}
+                        <details class="modifier-list compact">
+                            <summary>Modifiers</summary>
+                            {% for modifier in modifier_options %}
+                            <label>
+                                <input type="checkbox" name="modifiers" value="{{ modifier.id }}">
+                                {{ modifier.name }} (+{{ modifier.extra_price }})
+                            </label>
+                            {% endfor %}
+                        </details>
+                        {% endif %}
+                    </details>
+                </form>
+                {% endfor %}
+            {% else %}
+                <div class="epos-empty-cart">
+                    <div>🧾</div>
+                    <strong>Cart is empty</strong>
+                    <span>Add items to get started</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="epos-cart-footer">
+            <div class="epos-summary-line">
+                <span>Subtotal</span>
+                <strong>{{ subtotal|money:system_settings.currency }}</strong>
+            </div>
+            <div class="epos-summary-line muted">
+                <span>Tax</span>
+                <strong>{{ 0|money:system_settings.currency }}</strong>
+            </div>
+            <div class="epos-total-line">
+                <span>Total</span>
+                <strong>{{ total|money:system_settings.currency }}</strong>
+            </div>
+
+            <div class="epos-actions">
+                {% if order.status == 'held' %}
+                <a href="{% url 'recall_order' order.id %}">Recall</a>
+                {% else %}
+                <a href="{% url 'hold_order' order.id %}">Hold</a>
+                {% endif %}
+                <a href="{% url 'send_to_kitchen' order.id %}">Kitchen</a>
+            </div>
+        </div>
+    </aside>
+
+</div>
+
+<script>
+(() => {
+    const search = document.getElementById('orderSearch');
+    const cards = Array.from(document.querySelectorAll('.epos-product-card'));
+    const categoryButtons = Array.from(document.querySelectorAll('.epos-category'));
+    const prevButton = document.getElementById('orderPrevPage');
+    const nextButton = document.getElementById('orderNextPage');
+    const pageStatus = document.getElementById('orderPageStatus');
+    const perPage = 12;
+    let page = 1;
+    let activeCategory = 'all';
+
+    if (!search) {
+        return;
+    }
+
+    function matchesSearch(name, query){
+        if (!query) {
+            return true;
+        }
+        const words = name.split(/[^a-z0-9]+/).filter(Boolean);
+        return words.some((word) => word.startsWith(query));
+    }
+
+    function matchingCards(){
+        const query = search.value.trim().toLowerCase();
+        return cards.filter((card) => {
+            const categoryOk = activeCategory === 'all' || card.dataset.category === activeCategory;
+            const searchOk = matchesSearch(card.dataset.name, query);
+            return categoryOk && searchOk;
+        });
+    }
+
+    function renderPage(){
+        const matches = matchingCards();
+        const totalPages = Math.max(1, Math.ceil(matches.length / perPage));
+        page = Math.min(page, totalPages);
+        const start = (page - 1) * perPage;
+        const visible = new Set(matches.slice(start, start + perPage));
+
+        cards.forEach((card) => {
+            card.hidden = !visible.has(card);
+        });
+
+        pageStatus.textContent = `${page} / ${totalPages}`;
+        prevButton.disabled = page <= 1;
+        nextButton.disabled = page >= totalPages;
+    }
+
+    search.addEventListener('input', () => {
+        page = 1;
+        renderPage();
+    });
+
+    categoryButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            activeCategory = button.dataset.category;
+            page = 1;
+            categoryButtons.forEach((item) => item.classList.toggle('active', item === button));
+            renderPage();
+        });
+    });
+
+    prevButton.addEventListener('click', () => {
+        page -= 1;
+        renderPage();
+    });
+
+    nextButton.addEventListener('click', () => {
+        page += 1;
+        renderPage();
+    });
+
+    renderPage();
+})();
+</script>
+
+{% endblock %}

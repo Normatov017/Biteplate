@@ -1,0 +1,426 @@
+<div
+    class="modifier-modal"
+    id="modifierModal"
+    style="display: none;"
+>
+
+    <div class="modifier-modal-content">
+
+        <!-- ========================= -->
+        <!-- HEADER -->
+        <!-- ========================= -->
+
+        <h2
+            class="modifier-title"
+            id="modifierTitle"
+        >
+            Product
+        </h2>
+
+        <p class="modifier-subtitle">
+
+            Select modifiers
+
+        </p>
+
+
+        <!-- ========================= -->
+        <!-- OPTIONS -->
+        <!-- ========================= -->
+
+        <div
+            class="modifier-options"
+            id="modifierOptions"
+        >
+
+            <!-- JS inject qiladi -->
+
+        </div>
+
+
+        <!-- ========================= -->
+        <!-- ACTIONS -->
+        <!-- ========================= -->
+
+        <div class="modifier-actions">
+
+            <button
+                class="modifier-btn confirm"
+                id="modifierConfirmBtn"
+            >
+
+                Add To Order
+
+            </button>
+
+            <button
+                class="modifier-btn cancel"
+                onclick="closeModifierModal()"
+            >
+
+                Cancel
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<style>
+
+/* =====================================
+   MODIFIER MODAL
+===================================== */
+
+.modifier-modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(
+        0,
+        0,
+        0,
+        0.72
+    );
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+
+    z-index: 9999;
+
+    backdrop-filter: blur(8px);
+
+}
+
+
+/* =====================================
+   CONTENT
+===================================== */
+
+.modifier-modal-content {
+
+    width: 100%;
+
+    max-width: 420px;
+
+    background: linear-gradient(
+        180deg,
+        #131c2f,
+        #0b1120
+    );
+
+    border-radius: 28px;
+
+    border: 1px solid rgba(
+        255,
+        255,
+        255,
+        0.06
+    );
+
+    padding: 24px;
+
+    color: white;
+
+    box-shadow:
+        0 20px 60px rgba(
+            0,
+            0,
+            0,
+            0.45
+        );
+
+}
+
+
+/* =====================================
+   TITLE
+===================================== */
+
+.modifier-title {
+
+    font-size: 28px;
+
+    font-weight: 700;
+
+    margin-bottom: 10px;
+
+    color: white;
+
+}
+
+
+.modifier-subtitle {
+
+    color: rgba(
+        255,
+        255,
+        255,
+        0.6
+    );
+
+    margin-bottom: 24px;
+
+    font-size: 15px;
+
+}
+
+
+/* =====================================
+   OPTIONS
+===================================== */
+
+.modifier-options {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 14px;
+
+    margin-bottom: 28px;
+
+}
+
+
+.modifier-option {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 16px 18px;
+
+    background: rgba(
+        255,
+        255,
+        255,
+        0.04
+    );
+
+    border: 1px solid rgba(
+        255,
+        255,
+        255,
+        0.05
+    );
+
+    border-radius: 18px;
+
+}
+
+
+.modifier-option label {
+
+    color: white;
+
+    font-size: 16px;
+
+    font-weight: 500;
+
+}
+
+
+.modifier-option input[type="checkbox"] {
+
+    width: 22px;
+
+    height: 22px;
+
+    accent-color: #f5b942;
+
+}
+
+
+/* =====================================
+   ACTIONS
+===================================== */
+
+.modifier-actions {
+
+    display: flex;
+
+    gap: 14px;
+
+}
+
+
+.modifier-btn {
+
+    flex: 1;
+
+    border: none;
+
+    border-radius: 16px;
+
+    padding: 16px;
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+
+}
+
+
+.modifier-btn.confirm {
+
+    background: linear-gradient(
+        135deg,
+        #34d399,
+        #059669
+    );
+
+    color: white;
+
+}
+
+
+.modifier-btn.cancel {
+
+    background: rgba(
+        239,
+        68,
+        68,
+        0.12
+    );
+
+    color: #f87171;
+
+    border: 1px solid rgba(
+        239,
+        68,
+        68,
+        0.25
+    );
+
+}
+
+
+.modifier-btn:hover {
+
+    transform: translateY(-2px);
+
+}
+
+
+/* =====================================
+   MOBILE
+===================================== */
+
+@media (max-width: 768px) {
+
+    .modifier-modal {
+
+        padding: 16px;
+
+    }
+
+    .modifier-modal-content {
+
+        max-width: 100%;
+
+        border-radius: 24px;
+
+        padding: 20px;
+
+    }
+
+    .modifier-title {
+
+        font-size: 24px;
+
+    }
+
+}
+
+</style>
+
+
+
+<script>
+
+/* =====================================
+   OPEN MODAL
+===================================== */
+
+function openModifierModal(
+
+    productName,
+    modifiers
+
+) {
+
+    const modal = document.getElementById(
+        'modifierModal'
+    )
+
+    const title = document.getElementById(
+        'modifierTitle'
+    )
+
+    const options = document.getElementById(
+        'modifierOptions'
+    )
+
+    title.innerText = productName
+
+    options.innerHTML = ''
+
+    modifiers.forEach(modifier => {
+
+        options.innerHTML += `
+
+            <div class="modifier-option">
+
+                <label>
+
+                    ${modifier.name}
+
+                </label>
+
+                <input
+                    type="checkbox"
+                    value="${modifier.id}"
+                >
+
+            </div>
+
+        `
+
+    })
+
+    modal.style.display = 'flex'
+
+}
+
+
+/* =====================================
+   CLOSE MODAL
+===================================== */
+
+function closeModifierModal() {
+
+    document.getElementById(
+        'modifierModal'
+    ).style.display = 'none'
+
+}
+
+</script>

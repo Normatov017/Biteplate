@@ -1,0 +1,430 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate - QR Menu
+{% endblock %}
+
+{% block nav %}
+{% endblock %}
+
+{% block extra_head %}
+
+<style>
+
+body {
+
+    background: #f8fafc;
+
+}
+
+.qr-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 30px;
+
+}
+
+.qr-title {
+
+    font-size: 38px;
+
+    font-weight: 900;
+
+    color: #0f172a;
+
+}
+
+.qr-subtitle {
+
+    color: #64748b;
+
+    margin-top: 6px;
+
+}
+
+.qr-actions {
+
+    display: flex;
+
+    gap: 12px;
+
+    flex-wrap: wrap;
+
+    margin-bottom: 32px;
+
+}
+
+.quick-btn {
+
+    border: none;
+
+    border-radius: 16px;
+
+    padding: 14px 20px;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    color: white;
+
+    transition: 0.2s;
+
+}
+
+.quick-btn:hover {
+
+    transform: translateY(-2px);
+
+}
+
+.btn-waiter {
+
+    background: #3b82f6;
+
+}
+
+.btn-water {
+
+    background: #06b6d4;
+
+}
+
+.btn-bill {
+
+    background: #10b981;
+
+}
+
+.grid-menu {
+
+    display: grid;
+
+    grid-template-columns:
+    repeat(
+        auto-fit,
+        minmax(280px,1fr)
+    );
+
+    gap: 22px;
+
+}
+
+.menu-card {
+
+    background: white;
+
+    border-radius: 28px;
+
+    overflow: hidden;
+
+    box-shadow:
+    0 10px 30px rgba(
+        0,
+        0,
+        0,
+        0.06
+    );
+
+    transition: 0.25s;
+
+}
+
+.menu-card:hover {
+
+    transform: translateY(-4px);
+
+}
+
+.menu-image {
+
+    height: 180px;
+
+    background: linear-gradient(
+        135deg,
+        #0f172a,
+        #334155
+    );
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: white;
+
+    font-size: 42px;
+
+    font-weight: 900;
+
+}
+
+.menu-body {
+
+    padding: 22px;
+
+}
+
+.menu-name {
+
+    font-size: 22px;
+
+    font-weight: 900;
+
+    color: #0f172a;
+
+}
+
+.menu-description {
+
+    margin-top: 10px;
+
+    color: #64748b;
+
+    min-height: 48px;
+
+}
+
+.menu-footer {
+
+    margin-top: 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+}
+
+.menu-price {
+
+    font-size: 22px;
+
+    font-weight: 900;
+
+    color: #10b981;
+
+}
+
+.order-btn {
+
+    background: #0f172a;
+
+    color: white;
+
+    border: none;
+
+    border-radius: 14px;
+
+    padding: 12px 18px;
+
+    font-weight: 800;
+
+    text-decoration: none;
+
+}
+
+.toast {
+
+    position: fixed;
+
+    top: 30px;
+
+    right: 30px;
+
+    background: #10b981;
+
+    color: white;
+
+    padding: 16px 24px;
+
+    border-radius: 16px;
+
+    font-weight: 800;
+
+    display: none;
+
+    z-index: 9999;
+
+}
+
+</style>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div id="toast" class="toast">
+
+    Request sent
+
+</div>
+
+
+<div class="qr-header">
+
+    <div>
+
+        <div class="qr-title">
+
+            Table {{ table.table_number }}
+
+        </div>
+
+        <div class="qr-subtitle">
+
+            Scan • Order • Enjoy
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="qr-actions">
+
+    <button
+        class="quick-btn btn-waiter"
+        onclick="callWaiter('Call Waiter')"
+    >
+        Call Waiter
+    </button>
+
+    <button
+        class="quick-btn btn-water"
+        onclick="callWaiter('Need Water')"
+    >
+        Need Water
+    </button>
+
+    <button
+        class="quick-btn btn-bill"
+        onclick="callWaiter('Need Bill')"
+    >
+        Need Bill
+    </button>
+
+</div>
+
+
+<div class="grid-menu">
+
+{% for item in menu_items %}
+
+<div class="menu-card">
+
+    <div class="menu-image">
+
+        🍔
+
+    </div>
+
+    <div class="menu-body">
+
+        <div class="menu-name">
+
+            {{ item.name }}
+
+        </div>
+
+        <div class="menu-description">
+
+            {{ item.description|default:'Freshly prepared by our kitchen.' }}
+
+        </div>
+
+        <div class="menu-footer">
+
+            <div class="menu-price">
+
+                ${{ item.price }}
+
+            </div>
+
+            <a
+                href="{% url 'customer_order' table.id item.id %}"
+                class="order-btn"
+            >
+                Order
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% empty %}
+
+<div>
+
+    No menu items
+
+</div>
+
+{% endfor %}
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script>
+
+function showToast(message) {
+
+    const toast = document.getElementById(
+        'toast'
+    );
+
+    toast.innerText = message;
+
+    toast.style.display = 'block';
+
+    setTimeout(() => {
+
+        toast.style.display = 'none';
+
+    }, 3000);
+
+}
+
+
+function callWaiter(type) {
+
+    fetch(
+
+        `/call-waiter/{{ table.id }}/?type=${type}`
+
+    )
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        showToast(data.message);
+
+    })
+
+    .catch(error => {
+
+        console.log(error);
+
+    });
+
+}
+
+</script>
+
+{% endblock %}

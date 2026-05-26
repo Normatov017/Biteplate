@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate - Menu Management
+{% endblock %}
+
+{% block content %}
+
+<section class="management-page">
+    <header class="management-head">
+        <div>
+            <p class="section-label">Menu</p>
+            <h1 class="page-title">Menu Management</h1>
+            <p class="page-subtitle">Taomlar, ichimliklar, combo va availability boshqaruvi.</p>
+        </div>
+        <a href="{% url 'admin_studio' %}?section=menu" class="management-action">New Combo</a>
+    </header>
+
+    <div class="management-stats">
+        <article>
+            <span>Total Menu</span>
+            <strong>{{ menu_items.count }}</strong>
+        </article>
+        <article>
+            <span>Available</span>
+            <strong>{{ available_count }}</strong>
+        </article>
+        <article>
+            <span>Combos</span>
+            <strong>{{ combo_count }}</strong>
+        </article>
+    </div>
+
+    <div class="management-layout">
+        <form method="post" class="management-form">
+            {% csrf_token %}
+            <h2>Quick Add Item</h2>
+
+            <label>
+                Name
+                <input name="name" type="text" placeholder="Masalan: Lavash Combo" required>
+            </label>
+
+            <label>
+                Category
+                <select name="category">
+                    {% for key, label in categories %}
+                        <option value="{{ key }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                Branch
+                <select name="branch">
+                    {% for branch in branches %}
+                        <option value="{{ branch.id }}">{{ branch.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <div class="management-two">
+                <label>
+                    Price
+                    <input name="price" type="number" min="0" step="1000" placeholder="45000" required>
+                </label>
+                <label>
+                    Prep min
+                    <input name="preparation_time" type="number" min="1" step="1" value="10">
+                </label>
+            </div>
+
+            <div class="management-two">
+                <label>
+                    Available from
+                    <input name="available_from" type="time">
+                </label>
+                <label>
+                    Available to
+                    <input name="available_to" type="time">
+                </label>
+            </div>
+
+            <label>
+                Description
+                <textarea name="description" rows="3" placeholder="Short kitchen/menu description"></textarea>
+            </label>
+
+            <div class="management-checks">
+                <label><input name="available" type="checkbox" checked> Available</label>
+                <label><input name="is_spicy" type="checkbox"> Spicy</label>
+                <label><input name="is_vegetarian" type="checkbox"> Vegetarian</label>
+            </div>
+
+            <button type="submit">Add Menu Item</button>
+        </form>
+
+        <div class="management-table-wrap">
+            <table class="management-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Branch</th>
+                        <th>Price</th>
+                        <th>Schedule</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in menu_items %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.name }}</strong>
+                                <span>{{ item.description|default:'No description' }}</span>
+                            </td>
+                            <td>{{ item.get_category_display }}</td>
+                            <td>{{ item.branch.name|default:'All branches' }}</td>
+                            <td>${{ item.price }}</td>
+                            <td>
+                                {{ item.available_from|default:'Any' }}
+                                -
+                                {{ item.available_to|default:'Any' }}
+                            </td>
+                            <td>
+                                {% if item.available %}
+                                    <span class="status-pill ok">Available</span>
+                                {% else %}
+                                    <span class="status-pill muted">86 Stop</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'toggle_menu_item_availability' item.id %}">
+                                    {% if item.available %}86 Stop{% else %}Enable{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">No menu items yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

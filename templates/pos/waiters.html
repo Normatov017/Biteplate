@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Waiter Commission
+{% endblock %}
+
+{% block content %}
+
+<div class="pos-list-page waiter-kpi-page">
+    <header class="pos-list-head">
+        <div>
+            <p class="pos-kicker">Waiter Dashboard</p>
+            <h1>Waiter KPI</h1>
+            <span>{{ report_date }} · {{ commission_percent }}% bonus · fixed {{ currency_symbol }}{{ fixed_pay|floatformat:0 }}</span>
+        </div>
+        <a href="{% url 'pos_terminal' %}">Back to POS</a>
+    </header>
+
+    <form method="get" class="pos-filter-bar">
+        <label>
+            Sana
+            <input name="date" type="date" value="{{ report_date|date:'Y-m-d' }}">
+        </label>
+        {% if can_view_all_waiters %}
+        <label>
+            Waiter
+            <select name="waiter">
+                <option value="">All waiters</option>
+                {% for waiter in waiters %}
+                <option value="{{ waiter.id }}" {% if selected_waiter == waiter.id|stringformat:'s' %}selected{% endif %}>
+                    {{ waiter.get_full_name|default:waiter.username }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+        {% endif %}
+        <button type="submit">Filter</button>
+    </form>
+
+    <section class="waiter-kpi-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Waiter</th>
+                    <th>Orders</th>
+                    <th>Sales</th>
+                    <th>Fiksa</th>
+                    <th>Bonus</th>
+                    <th>Total KPI</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.waiter.get_full_name|default:row.waiter.username }}</td>
+                    <td>{{ row.order_count }}</td>
+                    <td>{{ currency_symbol }}{{ row.sales|floatformat:0 }}</td>
+                    <td>{{ currency_symbol }}{{ row.fixed_pay|floatformat:0 }}</td>
+                    <td>{{ currency_symbol }}{{ row.commission|floatformat:0 }}</td>
+                    <td><strong>{{ currency_symbol }}{{ row.total_payout|floatformat:0 }}</strong></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">Waiter topilmadi.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+
+{% endblock %}

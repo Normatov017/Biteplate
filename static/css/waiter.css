@@ -1,0 +1,17 @@
+.waiter-shell,
+.waiter-page{
+    display:grid;
+    gap:16px;
+}
+
+.table-card,
+.waiter-card{
+    border-radius:8px;
+    border:1px solid rgba(148,163,184,.15);
+    background:linear-gradient(180deg,rgba(15,23,42,.94),rgba(10,15,28,.94));
+}
+
+.table-card:hover,
+.waiter-card:hover{
+    border-color:rgba(251,191,36,.32);
+}

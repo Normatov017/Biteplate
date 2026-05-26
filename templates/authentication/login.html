@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate - Login
+{% endblock %}
+
+{% block auth_content %}
+
+<div class="auth-wrapper">
+
+    <div class="auth-card-premium">
+
+        <!-- LEFT SIDE -->
+
+        <div class="auth-left">
+
+            <div class="auth-brand">
+
+                <div class="auth-brand-logo">
+                    B
+                </div>
+
+                <div>
+
+                    <h1 class="auth-title">
+                        BitePlate
+                    </h1>
+
+                    <p class="auth-subtitle">
+                        Premium Restaurant Operating System
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="auth-text">
+
+                <h2>
+                    Welcome Back
+                </h2>
+
+                <p>
+                    Manage tables, kitchen workflow,
+                    waiter operations, inventory,
+                    analytics, cashier, and POS
+                    in one premium platform.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+
+        <div class="auth-right">
+
+            <div class="auth-form-header">
+
+                <h2>
+                    Sign In
+                </h2>
+
+                <p>
+                    Enter your credentials to continue
+                </p>
+
+            </div>
+
+
+            {% if error %}
+
+            <div class="auth-error">
+
+                {{ error }}
+
+            </div>
+
+            {% endif %}
+
+
+            <!-- LOGIN FORM -->
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <div class="premium-field">
+
+                    <label>
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        name="username"
+                        placeholder="Enter username"
+                        autocomplete="username"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="premium-field">
+
+                    <label>
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Enter password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="premium-login-btn"
+                >
+                    Sign In
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Payment</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="
+    bg-[#0b1120]
+    min-h-screen
+    flex
+    items-center
+    justify-center
+    p-10
+">
+
+<div class="
+    bg-[#111827]
+    w-[700px]
+    rounded-[32px]
+    shadow-2xl
+    p-10
+">
+
+    <!-- TITLE -->
+
+    <div class="mb-10">
+
+        <h1 class="
+            text-5xl
+            font-black
+            text-white
+        ">
+
+            Payment Terminal
+
+        </h1>
+
+        <p class="
+            text-gray-400
+            mt-3
+            text-xl
+        ">
+
+            Cashier Payment Window
+
+        </p>
+
+    </div>
+
+
+    <!-- TOTAL -->
+
+    <div class="
+        bg-gradient-to-r
+        from-green-500
+        to-emerald-600
+        rounded-3xl
+        p-8
+        mb-8
+    ">
+
+        <div class="
+            text-white
+            text-2xl
+        ">
+
+            TOTAL
+
+        </div>
+
+        <div class="
+            text-7xl
+            font-black
+            text-white
+            mt-2
+        ">
+
+            $<span id="totalAmount">{{ total }}</span>
+
+        </div>
+
+    </div>
+
+
+    <!-- CUSTOMER PAYMENT -->
+
+    <div class="mb-8">
+
+        <label class="
+            block
+            text-white
+            text-2xl
+            mb-4
+            font-bold
+        ">
+
+            Customer Paid Amount
+
+        </label>
+
+        <input
+            type="number"
+            id="paidAmount"
+            placeholder="Enter amount..."
+            class="
+                w-full
+                bg-[#1f2937]
+                border
+                border-[#374151]
+                rounded-2xl
+                p-6
+                text-white
+                text-4xl
+                outline-none
+            "
+        >
+
+    </div>
+
+
+    <!-- CHANGE -->
+
+    <div class="
+        bg-[#1f2937]
+        rounded-3xl
+        p-8
+        mb-10
+    ">
+
+        <div class="
+            text-gray-400
+            text-2xl
+        ">
+
+            CHANGE
+
+        </div>
+
+        <div
+            id="changeAmount"
+            class="
+                text-6xl
+                font-black
+                text-yellow-400
+                mt-2
+            "
+        >
+
+            $0
+
+        </div>
+
+    </div>
+
+
+    <!-- PAYMENT BUTTONS -->
+
+    <div class="
+        grid
+        grid-cols-2
+        gap-5
+    ">
+
+        <a
+            href="/pos/complete-payment/cash/"
+            class="
+                bg-green-500
+                hover:bg-green-400
+                transition
+                rounded-2xl
+                p-6
+                text-center
+                text-white
+                text-3xl
+                font-black
+            "
+        >
+
+            CASH
+
+        </a>
+
+        <a
+            href="/pos/complete-payment/card/"
+            class="
+                bg-blue-500
+                hover:bg-blue-400
+                transition
+                rounded-2xl
+                p-6
+                text-center
+                text-white
+                text-3xl
+                font-black
+            "
+        >
+
+            CARD
+
+        </a>
+
+        <a
+            href="/pos/complete-payment/click/"
+            class="
+                bg-cyan-500
+                hover:bg-cyan-400
+                transition
+                rounded-2xl
+                p-6
+                text-center
+                text-white
+                text-3xl
+                font-black
+            "
+        >
+
+            CLICK
+
+        </a>
+
+        <a
+            href="/pos/complete-payment/payme/"
+            class="
+                bg-purple-500
+                hover:bg-purple-400
+                transition
+                rounded-2xl
+                p-6
+                text-center
+                text-white
+                text-3xl
+                font-black
+            "
+        >
+
+            PAYME
+
+        </a>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    const paidInput = document.getElementById(
+        'paidAmount'
+    );
+
+    const total = parseFloat(
+
+        document.getElementById(
+            'totalAmount'
+        ).innerText
+
+    );
+
+    const changeBox = document.getElementById(
+        'changeAmount'
+    );
+
+
+    paidInput.addEventListener('input', () => {
+
+        const paid = parseFloat(
+            paidInput.value
+        ) || 0;
+
+        const change = paid - total;
+
+        if (change >= 0) {
+
+            changeBox.innerText =
+                '$' + change.toFixed(2);
+
+        } else {
+
+            changeBox.innerText = '$0';
+
+        }
+
+    });
+
+</script>
+
+</body>
+</html>

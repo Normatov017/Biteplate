@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}
+QR Menu Generator
+{% endblock %}
+
+{% block content %}
+
+<section class="qr-generator-page">
+
+    <div class="qr-generator-head">
+        <div>
+            <p class="eyebrow">QR Menu</p>
+            <h1>Table QR Generator</h1>
+            <p>Har bir stol uchun QR menu link va printable code.</p>
+        </div>
+        <a href="{% url 'settings_dashboard' %}" class="qr-back-btn">Settings</a>
+    </div>
+
+    <div class="qr-card-grid">
+
+        {% for table in tables %}
+
+            <article class="qr-card">
+                <div class="qr-card-top">
+                    <div>
+                        <span>Table</span>
+                        <strong>{{ table.table_number }}</strong>
+                    </div>
+                    <small>{{ table.get_status_display }}</small>
+                </div>
+
+                <img
+                    src="{% url 'qr_code_image' table.id %}"
+                    alt="QR code for Table {{ table.table_number }}"
+                    class="qr-code"
+                >
+
+                <div class="qr-link">
+                    {{ request.scheme }}://{{ request.get_host }}{% url 'qr_menu' table.id %}
+                </div>
+
+                <div class="qr-actions-row">
+                    <a href="{% url 'qr_menu' table.id %}" target="_blank">Open Menu</a>
+                    <button type="button" onclick="window.print()">Print</button>
+                </div>
+            </article>
+
+        {% empty %}
+
+            <div class="settings-card">
+                <h3>No tables</h3>
+                <p>Avval table qo‘shing, keyin QR code chiqariladi.</p>
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endblock %}

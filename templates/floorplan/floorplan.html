@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}BitePlate - Floor Plan{% endblock %}
+{% block content %}
+<header class="page-head"><div><p class="eyebrow">Floor plan</p><h1 class="page-title">Dining Room</h1><p class="page-copy">Open a table from the floor layout.</p></div></header>
+<section class="grid grid-auto">
+{% for table in tables %}
+    <a class="card card-pad status-line {{ table.status }}" href="{% url 'waiter_pos' table.id %}"><div class="card-head"><div><h2 class="card-title">Table {{ table.table_number }}</h2><p class="card-subtitle">{{ table.seats }} seats</p></div><span class="badge status-{{ table.status }}">{{ table.status }}</span></div></a>
+{% empty %}
+    <div class="empty"><strong>No tables</strong>Floor plan is empty.</div>
+{% endfor %}
+</section>
+{% endblock %}
+

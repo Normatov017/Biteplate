@@ -1,0 +1,710 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate - Smart Floor
+{% endblock %}
+
+{% block content %}
+
+<style>
+
+.floor-shell {
+
+    background:
+    radial-gradient(circle at top, #132238, #09111d);
+
+    border-radius: 32px;
+
+    padding: 28px;
+
+    min-height: 100vh;
+
+}
+
+
+.floor-map {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 1100px;
+
+    border-radius: 28px;
+
+    overflow: hidden;
+
+    background:
+    linear-gradient(
+        135deg,
+        #cdb89b,
+        #d8c6aa
+    );
+
+    box-shadow:
+    inset 0 0 100px rgba(0,0,0,0.08);
+
+}
+
+
+/* =========================
+   TABLE
+========================= */
+
+.restaurant-table {
+
+    position: absolute;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 24px;
+
+    font-size: 42px;
+
+    font-weight: 900;
+
+    color: #0f172a;
+
+    cursor: pointer;
+
+    transition: 0.25s;
+
+    border: 5px solid rgba(255,255,255,0.5);
+
+    box-shadow:
+
+    0 15px 30px rgba(0,0,0,0.15),
+
+    inset 0 2px 4px rgba(255,255,255,0.5);
+
+}
+
+
+.restaurant-table:hover {
+
+    transform:
+    translateY(-4px)
+    scale(1.03);
+
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+.status-free {
+
+    background:
+    linear-gradient(
+        145deg,
+        #ffffff,
+        #f4f4f4
+    );
+
+    border-color: #22c55e;
+
+}
+
+
+.status-occupied {
+
+    background:
+    linear-gradient(
+        145deg,
+        #4ade80,
+        #22c55e
+    );
+
+    border-color: #15803d;
+
+}
+
+
+.status-reserved {
+
+    background:
+    linear-gradient(
+        145deg,
+        #d8b4fe,
+        #c084fc
+    );
+
+    border-color: #9333ea;
+
+}
+
+
+.status-awaiting_bill {
+
+    background:
+    linear-gradient(
+        145deg,
+        #fde047,
+        #facc15
+    );
+
+    border-color: #ca8a04;
+
+}
+
+
+.status-cleaning {
+
+    background:
+    linear-gradient(
+        145deg,
+        #f87171,
+        #ef4444
+    );
+
+    border-color: #dc2626;
+
+}
+
+
+/* =========================
+   CHAIRS
+========================= */
+
+.chair {
+
+    position: absolute;
+
+    width: 38px;
+
+    height: 38px;
+
+    background:
+    linear-gradient(
+        145deg,
+        #6366f1,
+        #4f46e5
+    );
+
+    border-radius: 14px;
+
+    box-shadow:
+    0 6px 12px rgba(0,0,0,0.25);
+
+}
+
+
+/* =========================
+   ORDER BADGE
+========================= */
+
+.order-badge {
+
+    position: absolute;
+
+    top: 10px;
+
+    right: 10px;
+
+    width: 34px;
+
+    height: 34px;
+
+    border-radius: 50%;
+
+    background: #ef4444;
+
+    color: white;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+}
+
+
+/* =========================
+   KITCHEN
+========================= */
+
+.kitchen-zone {
+
+    position: absolute;
+
+    top: 40px;
+
+    left: 40px;
+
+    width: 300px;
+
+    height: 320px;
+
+    border-radius: 24px;
+
+    background:
+    linear-gradient(
+        145deg,
+        #94a3b8,
+        #cbd5e1
+    );
+
+    border: 6px solid #334155;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 32px;
+
+    font-weight: 800;
+
+    color: #1e293b;
+
+}
+
+
+/* =========================
+   MODAL
+========================= */
+
+.table-modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(0,0,0,0.55);
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    z-index: 9999;
+
+}
+
+
+.modal-card {
+
+    width: 420px;
+
+    border-radius: 28px;
+
+    padding: 28px;
+
+    background: #ffffff;
+
+}
+
+
+.modal-actions {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 14px;
+
+    margin-top: 24px;
+
+}
+
+
+.modal-btn {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 16px;
+
+    border-radius: 18px;
+
+    text-decoration: none;
+
+    font-weight: 700;
+
+    transition: 0.2s;
+
+}
+
+
+.modal-btn:hover {
+
+    transform: scale(1.03);
+
+}
+
+
+.btn-order {
+
+    background: #22c55e;
+
+    color: white;
+
+}
+
+
+.btn-reserve {
+
+    background: #9333ea;
+
+    color: white;
+
+}
+
+
+.btn-payment {
+
+    background: #f59e0b;
+
+    color: white;
+
+}
+
+
+.btn-close {
+
+    background: #ef4444;
+
+    color: white;
+
+    border: none;
+
+}
+
+</style>
+
+
+<div class="floor-shell">
+
+    <div class="page-head">
+
+        <div>
+
+            <p class="eyebrow">
+                Smart Restaurant
+            </p>
+
+            <h1 class="page-title">
+                Interactive Floor Plan
+            </h1>
+
+            <p class="page-copy">
+                Live restaurant layout
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="floor-map">
+
+        <!-- KITCHEN -->
+
+        <div class="kitchen-zone">
+
+            Kitchen
+
+        </div>
+
+
+        <!-- TABLES -->
+
+        {% for table in tables %}
+
+        <div
+
+            class="
+                restaurant-table
+                status-{{ table.status }}
+            "
+
+            data-table="{{ table.table_number }}"
+
+            onclick="openTableModal(
+                '{{ table.id }}',
+                '{{ table.table_number }}'
+            )"
+
+        >
+
+            {{ table.table_number }}
+
+            <div class="chair"
+                style="
+                    top:-22px;
+                    left:50%;
+                    transform:translateX(-50%);
+                ">
+            </div>
+
+            <div class="chair"
+                style="
+                    bottom:-22px;
+                    left:50%;
+                    transform:translateX(-50%);
+                ">
+            </div>
+
+            <div class="chair"
+                style="
+                    left:-22px;
+                    top:50%;
+                    transform:translateY(-50%);
+                ">
+            </div>
+
+            <div class="chair"
+                style="
+                    right:-22px;
+                    top:50%;
+                    transform:translateY(-50%);
+                ">
+            </div>
+
+            {% if table.status == 'occupied' %}
+
+            <div class="order-badge">
+
+                2
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     MODAL
+========================= -->
+
+<div
+    class="table-modal"
+    id="tableModal"
+>
+
+    <div class="modal-card">
+
+        <h2 id="modalTableTitle">
+
+            Table
+
+        </h2>
+
+        <p class="muted">
+
+            Manage table operations
+
+        </p>
+
+        <div class="modal-actions">
+
+            <a
+                id="orderBtn"
+                href="#"
+                class="modal-btn btn-order"
+            >
+
+                Create Order
+
+            </a>
+
+            <a
+                href="#"
+                class="modal-btn btn-reserve"
+            >
+
+                Reserve
+
+            </a>
+
+            <a
+                href="#"
+                class="modal-btn btn-payment"
+            >
+
+                Payment
+
+            </a>
+
+            <button
+                onclick="closeTableModal()"
+                class="modal-btn btn-close"
+            >
+
+                Close
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const tablePositions = {
+
+    1: {
+        top: '90px',
+        left: '430px',
+        width: '150px',
+        height: '150px'
+    },
+
+    2: {
+        top: '90px',
+        left: '650px',
+        width: '150px',
+        height: '150px'
+    },
+
+    3: {
+        top: '80px',
+        left: '920px',
+        width: '280px',
+        height: '170px'
+    },
+
+    4: {
+        top: '330px',
+        left: '430px',
+        width: '150px',
+        height: '150px'
+    },
+
+    5: {
+        top: '330px',
+        left: '650px',
+        width: '150px',
+        height: '150px'
+    },
+
+    6: {
+        top: '360px',
+        left: '940px',
+        width: '300px',
+        height: '190px'
+    },
+
+    7: {
+        top: '580px',
+        left: '430px',
+        width: '170px',
+        height: '170px'
+    },
+
+    8: {
+        top: '580px',
+        left: '660px',
+        width: '170px',
+        height: '170px'
+    },
+
+    9: {
+        top: '790px',
+        left: '120px',
+        width: '320px',
+        height: '180px'
+    },
+
+    10: {
+        top: '810px',
+        left: '470px',
+        width: '170px',
+        height: '170px'
+    },
+
+    11: {
+        top: '810px',
+        left: '710px',
+        width: '170px',
+        height: '170px'
+    },
+
+    12: {
+        top: '790px',
+        left: '980px',
+        width: '300px',
+        height: '180px'
+    }
+
+};
+
+
+document.querySelectorAll(
+
+    '.restaurant-table'
+
+).forEach(table => {
+
+    const tableNumber = table.dataset.table;
+
+    const position = tablePositions[tableNumber];
+
+    if(position) {
+
+        table.style.top = position.top;
+        table.style.left = position.left;
+        table.style.width = position.width;
+        table.style.height = position.height;
+
+    }
+
+});
+
+
+function openTableModal(
+    tableId,
+    tableNumber
+) {
+
+    document.getElementById(
+        'tableModal'
+    ).style.display = 'flex';
+
+    document.getElementById(
+        'modalTableTitle'
+    ).innerHTML = `Table ${tableNumber}`;
+
+    document.getElementById(
+        'orderBtn'
+    ).href = `/create-order/${tableId}/`;
+
+}
+
+
+function closeTableModal() {
+
+    document.getElementById(
+        'tableModal'
+    ).style.display = 'none';
+
+}
+
+</script>
+
+{% endblock %}

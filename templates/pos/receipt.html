@@ -1,0 +1,607 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BitePlate - Receipt
+{% endblock %}
+
+{% block nav %}
+{% endblock %}
+
+{% block main_class %}
+shell-full
+{% endblock %}
+
+{% block content %}
+
+<style>
+
+    body {
+
+        margin: 0;
+
+        background:
+        radial-gradient(
+            circle at top,
+            #13203f,
+            #091224 60%
+        );
+
+        min-height: 100vh;
+
+        font-family:
+        Inter,
+        sans-serif;
+
+    }
+
+    .receipt-wrap {
+
+        min-height: 100vh;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        padding: 40px;
+
+    }
+
+    .receipt {
+
+        width: 100%;
+
+        max-width: 540px;
+
+        background: white;
+
+        border-radius: 36px;
+
+        overflow: hidden;
+
+        box-shadow:
+        0 30px 80px rgba(
+            0,
+            0,
+            0,
+            0.35
+        );
+
+        animation:
+        fadeUp 0.4s ease;
+
+    }
+
+    @keyframes fadeUp {
+
+        from {
+
+            opacity: 0;
+
+            transform:
+            translateY(25px);
+
+        }
+
+        to {
+
+            opacity: 1;
+
+            transform:
+            translateY(0);
+
+        }
+
+    }
+
+    .receipt-head {
+
+        padding: 48px 40px;
+
+        text-align: center;
+
+        background:
+        linear-gradient(
+            135deg,
+            #00e5a8,
+            #00a6ff
+        );
+
+        color: white;
+
+    }
+
+    .receipt-logo {
+
+        width: 92px;
+
+        height: 92px;
+
+        margin: 0 auto 22px;
+
+        border-radius: 28px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        font-size: 42px;
+
+        background: rgba(
+            255,
+            255,
+            255,
+            0.18
+        );
+
+        backdrop-filter: blur(12px);
+
+        box-shadow:
+        0 14px 35px rgba(
+            0,
+            0,
+            0,
+            0.18
+        );
+
+    }
+
+    .eyebrow {
+
+        text-transform: uppercase;
+
+        letter-spacing: 4px;
+
+        font-size: 12px;
+
+        font-weight: 700;
+
+        opacity: 0.85;
+
+        margin-bottom: 12px;
+
+    }
+
+    .receipt-head h1 {
+
+        margin: 0;
+
+        font-size: 56px;
+
+        font-weight: 900;
+
+        letter-spacing: -3px;
+
+    }
+
+    .success-badge {
+
+        margin-top: 18px;
+
+        display: inline-flex;
+
+        align-items: center;
+
+        gap: 8px;
+
+        background: rgba(
+            255,
+            255,
+            255,
+            0.18
+        );
+
+        padding: 12px 22px;
+
+        border-radius: 999px;
+
+        font-size: 14px;
+
+        font-weight: 700;
+
+    }
+
+    .receipt-body {
+
+        padding: 36px;
+
+    }
+
+    .receipt-line {
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        padding: 16px 0;
+
+        border-bottom:
+        1px dashed #dbe4f0;
+
+    }
+
+    .receipt-line span {
+
+        color: #64748b;
+
+        font-size: 15px;
+
+    }
+
+    .receipt-line strong {
+
+        color: #0f172a;
+
+        font-size: 17px;
+
+        font-weight: 700;
+
+    }
+
+    .items {
+
+        margin-top: 24px;
+
+        display: flex;
+
+        flex-direction: column;
+
+        gap: 18px;
+
+    }
+
+    .item {
+
+        background: #f8fafc;
+
+        border-radius: 22px;
+
+        padding: 20px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        transition: 0.2s;
+
+    }
+
+    .item:hover {
+
+        transform:
+        translateY(-2px);
+
+        box-shadow:
+        0 10px 20px rgba(
+            0,
+            0,
+            0,
+            0.06
+        );
+
+    }
+
+    .item-name {
+
+        color: #0f172a;
+
+        font-size: 18px;
+
+        font-weight: 800;
+
+    }
+
+    .item-qty {
+
+        margin-top: 6px;
+
+        color: #64748b;
+
+        font-size: 13px;
+
+    }
+
+    .item-price {
+
+        color: #0f172a;
+
+        font-size: 24px;
+
+        font-weight: 900;
+
+    }
+
+    .receipt-total {
+
+        margin-top: 30px;
+
+        padding-top: 24px;
+
+        border-top:
+        2px solid #e2e8f0;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+    }
+
+    .receipt-total span:first-child {
+
+        color: #0f172a;
+
+        font-size: 24px;
+
+        font-weight: 800;
+
+    }
+
+    .receipt-total span:last-child {
+
+        font-size: 48px;
+
+        font-weight: 900;
+
+        color: #00c97b;
+
+        letter-spacing: -2px;
+
+    }
+
+    .receipt-actions {
+
+        margin-top: 34px;
+
+        display: grid;
+
+        grid-template-columns: 1fr 1fr;
+
+        gap: 16px;
+
+    }
+
+    .receipt-btn {
+
+        border: none;
+
+        border-radius: 20px;
+
+        padding: 18px;
+
+        font-size: 16px;
+
+        font-weight: 800;
+
+        cursor: pointer;
+
+        transition: 0.25s;
+
+        text-align: center;
+
+        text-decoration: none;
+
+    }
+
+    .receipt-btn:hover {
+
+        transform:
+        translateY(-2px);
+
+    }
+
+    .btn-dark {
+
+        background: #0f172a;
+
+        color: white;
+
+    }
+
+    .btn-green {
+
+        background:
+        linear-gradient(
+            135deg,
+            #00e676,
+            #00c853
+        );
+
+        color: white;
+
+    }
+
+    .receipt-footer {
+
+        margin-top: 28px;
+
+        text-align: center;
+
+        color: #64748b;
+
+        font-size: 13px;
+
+    }
+
+    @media (max-width: 640px) {
+
+        .receipt-wrap {
+
+            padding: 18px;
+
+        }
+
+        .receipt-head h1 {
+
+            font-size: 44px;
+
+        }
+
+        .receipt-total span:last-child {
+
+            font-size: 38px;
+
+        }
+
+        .receipt-actions {
+
+            grid-template-columns: 1fr;
+
+        }
+
+    }
+
+    @media print {
+
+        .no-print {
+
+            display: none;
+
+        }
+
+        body {
+
+            background: white;
+
+        }
+
+        .receipt {
+
+            box-shadow: none;
+
+        }
+
+    }
+
+</style>
+
+
+<div class="receipt-wrap">
+
+    <article class="receipt">
+
+        <header class="receipt-head">
+
+            <div class="receipt-logo">
+                🍔
+            </div>
+
+            <p class="eyebrow">
+                Payment Successful
+            </p>
+
+            <h1>
+                BitePlate
+            </h1>
+
+            <div class="success-badge">
+                ✓ Transaction completed
+            </div>
+
+        </header>
+
+        <div class="receipt-body">
+
+            <div class="receipt-line">
+                <span>Receipt</span>
+                <strong>
+                    #{{ receipt_number|default:'POS' }}
+                </strong>
+            </div>
+
+            <div class="receipt-line">
+                <span>Date</span>
+                <strong>
+                    {{ date }}
+                </strong>
+            </div>
+
+            <div class="receipt-line">
+                <span>Payment</span>
+                <strong>
+                    {{ method }}
+                </strong>
+            </div>
+
+            <div class="receipt-line">
+                <span>Cashier</span>
+                <strong>
+                    {{ cashier.username }}
+                </strong>
+            </div>
+
+            <div class="items">
+
+                {% for item in items %}
+
+                <div class="item">
+
+                    <div>
+
+                        <div class="item-name">
+                            {{ item.product.name }}
+                        </div>
+
+                        <div class="item-qty">
+                            Qty: {{ item.quantity }}
+                        </div>
+
+                    </div>
+
+                    <div class="item-price">
+                        ${{ item.subtotal }}
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            <div class="receipt-total">
+
+                <span>Total</span>
+
+                <span>
+                    ${{ total }}
+                </span>
+
+            </div>
+
+            <div class="receipt-actions no-print">
+
+                <button
+                    class="receipt-btn btn-dark"
+                    onclick="window.print()"
+                >
+                    Print Receipt
+                </button>
+
+                <a
+                    href="{% url 'pos_terminal' %}"
+                    class="receipt-btn btn-green"
+                >
+                    New Order
+                </a>
+
+            </div>
+
+            <div class="receipt-footer">
+                Powered by BitePlate SaaS POS
+            </div>
+
+        </div>
+
+    </article>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Floor Editor
+{% endblock %}
+
+{% block content %}
+
+<section class="floor-editor-page">
+    <header class="floor-editor-top">
+        <div>
+            <p class="pos-kicker">Floor plan editor</p>
+            <h1>Main Floor</h1>
+        </div>
+        <div class="floor-editor-actions">
+            <a href="{% url 'pos_terminal' %}">Cancel</a>
+            <button type="button" id="saveFloor">Save</button>
+        </div>
+    </header>
+
+    <div class="floor-editor-toolbar">
+        <form method="post" action="{% url 'add_floor_table' %}">
+            {% csrf_token %}
+            <button type="submit">Add Table</button>
+        </form>
+
+        <form method="post" action="{% url 'add_floor_decor' %}">
+            {% csrf_token %}
+            <select name="decor_type">
+                <option value="plant">Plant</option>
+                <option value="bar">Bar</option>
+                <option value="kitchen">Kitchen</option>
+                <option value="wall">Wall</option>
+                <option value="door">Door</option>
+                <option value="note">Note</option>
+            </select>
+            <input type="text" name="label" placeholder="Label">
+            <button type="submit">Add Decor</button>
+        </form>
+    </div>
+
+    <div class="floor-editor-canvas" id="floorCanvas">
+        {% for decor in decors %}
+        <div
+            class="floor-object floor-decor {{ decor.decor_type }}"
+            data-kind="decor"
+            data-id="{{ decor.id }}"
+            style="left:{{ decor.pos_x }}px; top:{{ decor.pos_y }}px; width:{{ decor.pos_width }}px; height:{{ decor.pos_height }}px;"
+        >
+            <span>{{ decor.label|default:decor.get_decor_type_display }}</span>
+        </div>
+        {% endfor %}
+
+        {% for table in tables %}
+        <div
+            class="floor-object floor-table {{ table.status }}"
+            data-kind="table"
+            data-id="{{ table.id }}"
+            style="left:{{ table.pos_x }}px; top:{{ table.pos_y }}px; width:{{ table.pos_width }}px; height:{{ table.pos_height }}px;"
+        >
+            <strong>{{ table.table_number }}</strong>
+            <span>{{ table.seats }} seats</span>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<script>
+(() => {
+    const canvas = document.getElementById('floorCanvas');
+    const saveButton = document.getElementById('saveFloor');
+    let active = null;
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+
+    document.querySelectorAll('.floor-object').forEach((node) => {
+        node.addEventListener('pointerdown', (event) => {
+            active = {
+                node,
+                startX: event.clientX,
+                startY: event.clientY,
+                left: parseInt(node.style.left, 10) || 0,
+                top: parseInt(node.style.top, 10) || 0
+            };
+            node.setPointerCapture(event.pointerId);
+            node.classList.add('selected');
+        });
+    });
+
+    window.addEventListener('pointermove', (event) => {
+        if (!active) {
+            return;
+        }
+
+        const nextLeft = active.left + event.clientX - active.startX;
+        const nextTop = active.top + event.clientY - active.startY;
+        active.node.style.left = `${clamp(nextLeft, 0, canvas.clientWidth - active.node.offsetWidth)}px`;
+        active.node.style.top = `${clamp(nextTop, 0, canvas.clientHeight - active.node.offsetHeight)}px`;
+    });
+
+    window.addEventListener('pointerup', () => {
+        document.querySelectorAll('.floor-object.selected').forEach((node) => {
+            node.classList.remove('selected');
+        });
+        active = null;
+    });
+
+    saveButton?.addEventListener('click', async () => {
+        const payload = {
+            tables: [],
+            decors: []
+        };
+
+        document.querySelectorAll('.floor-object').forEach((node) => {
+            const item = {
+                id: node.dataset.id,
+                x: parseInt(node.style.left, 10) || 0,
+                y: parseInt(node.style.top, 10) || 0,
+                width: node.offsetWidth,
+                height: node.offsetHeight
+            };
+
+            if (node.dataset.kind === 'table') {
+                payload.tables.push(item);
+            } else {
+                payload.decors.push(item);
+            }
+        });
+
+        await fetch("{% url 'save_floor_layout' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        window.location.href = "{% url 'pos_terminal' %}";
+    });
+})();
+</script>
+
+{% endblock %}
